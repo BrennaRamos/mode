@@ -11,7 +11,7 @@ fn main() {
         let mut green = 0;
         let mut red = 0;
         let mut input = String::new();
-        let now = Local::now();
+        let (sender, receiver) = std::sync::mpsc::channel();
 
         println!("Level: {}\n", level);
 
@@ -28,16 +28,27 @@ fn main() {
         println!();
         println!("Which color has more tallies? g/r: ");
         // MAKE A 5 SECOND TIMER
-        match io::stdin().read_line(&mut input) {
-            Ok(_n) => {}
-            Err(error) => println!("error: {error}"),
-        }
+        std::thread::spawn(move || {
+            match io::stdin().read_line(&mut input) {
+                Ok(_n) => {}
+                Err(error) => println!("error: {error}"),
+            }
+            sender.send(input.to_string()).unwrap();
+        });
 
-        if process_guess(input, green, red) {
-            level += 1;
-        } else {
-            println!("Game Over");
-            return;
+        match receiver.recv_timeout(Duration::seconds(5).to_std().unwrap()) {
+            Ok(input) => {
+                if process_guess(input, green, red) {
+                    level += 1;
+                } else {
+                    println!("Game Over");
+                    return;
+                }
+            }
+            Err(_error) => {
+                println!("{} Too slow!\n", "❌".red());
+                return;
+            }
         }
     }
 
