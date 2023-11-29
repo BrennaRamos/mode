@@ -11,6 +11,12 @@ pub struct GameData {
     player_guess: String,
     green_tally: i32,
     red_tally: i32,
+    result: String,
+}
+
+#[derive(Resource)]
+pub struct MyTimer {
+    pub timer: Timer,
 }
 
 pub fn game(
@@ -73,7 +79,7 @@ fn print_shapes(
     asset_server: &Res<AssetServer>,
     commands: &mut Commands,
     offset: i32,
-) -> (char) {
+) -> char {
     if random % 2 == 0 {
         //for _iter in 0..1 {
         let font = asset_server.load("fonts/FiraSans-Bold.ttf");
@@ -89,7 +95,7 @@ fn print_shapes(
                 )
                 .with_alignment(TextAlignment::Center),
                 transform: Transform::from_translation(Vec3::new(
-                    0.0 + (offset * 20) as f32,
+                    -200.0 + (offset * 20) as f32,
                     0.0,
                     0.0,
                 )),
@@ -97,7 +103,7 @@ fn print_shapes(
             }
         });
         //}
-        return ('g');
+        return 'g';
     } else {
         //for _iter in 0..print_amt {
         let font = asset_server.load("fonts/FiraSans-Bold.ttf");
@@ -113,7 +119,7 @@ fn print_shapes(
                 )
                 .with_alignment(TextAlignment::Center),
                 transform: Transform::from_translation(Vec3::new(
-                    0.0 + (offset * 20) as f32,
+                    -200.0 + (offset * 20) as f32,
                     0.0,
                     0.0,
                 )),
@@ -121,7 +127,7 @@ fn print_shapes(
             }
         });
         //}
-        return ('r');
+        return 'r';
     }
 }
 
@@ -131,15 +137,68 @@ pub fn clear_shapes(mut commands: Commands, mut query: Query<Entity, With<Text>>
     }
 }
 
-fn process_guess(guess: String, green: i32, red: i32) -> bool {
+fn process_guess(
+    guess: String,
+    green: i32,
+    red: i32,
+    asset_server: &Res<AssetServer>,
+    commands: &mut Commands,
+    game_data: &mut ResMut<GameData>,
+) -> bool {
+    let font = asset_server.load("fonts/FiraSans-Bold.ttf");
     if guess.trim() == "g" && green > red {
-        println!("{} Correct!\n", "✅".green());
+        let correct_green_entity = commands.spawn({
+            Text2dBundle {
+                text: Text::from_section(
+                    "Correct!",
+                    TextStyle {
+                        font,
+                        font_size: 48.0,
+                        color: Color::GREEN,
+                    },
+                )
+                .with_alignment(TextAlignment::Center),
+                transform: Transform::from_translation(Vec3::new(0.0, -200.0, 0.0)),
+                ..default()
+            }
+        });
+        game_data.result = "Correct!".to_string();
         return true;
     } else if guess.trim() == "r" && red > green {
-        println!("{} Correct!\n", "✅".green());
+        let correct_red_entity = commands.spawn({
+            Text2dBundle {
+                text: Text::from_section(
+                    "Correct!",
+                    TextStyle {
+                        font,
+                        font_size: 48.0,
+                        color: Color::GREEN,
+                    },
+                )
+                .with_alignment(TextAlignment::Center),
+                transform: Transform::from_translation(Vec3::new(0.0, -200.0, 0.0)),
+                ..default()
+            }
+        });
+        game_data.result = "Correct!".to_string();
         return true;
     } else {
-        println!("{} Incorrect!\n", "❌".red());
+        let incorrect_entity = commands.spawn({
+            Text2dBundle {
+                text: Text::from_section(
+                    "Incorrect!",
+                    TextStyle {
+                        font,
+                        font_size: 48.0,
+                        color: Color::RED,
+                    },
+                )
+                .with_alignment(TextAlignment::Center),
+                transform: Transform::from_translation(Vec3::new(0.0, -200.0, 0.0)),
+                ..default()
+            }
+        });
+        game_data.result = "Incorrect!".to_string();
         return false;
     }
 }
@@ -233,9 +292,11 @@ pub fn interact_button(
     >,
     mut game_data: ResMut<GameData>,
     mut next_state: ResMut<NextState<AppState>>,
+    asset_server: Res<AssetServer>,
+    mut commands: Commands,
 ) {
     // Buttons
-    for (interaction, mut color, mut border_color) in interaction_query.iter_mut() {
+    for (interaction, color, mut border_color) in interaction_query.iter_mut() {
         match *interaction {
             Interaction::Pressed => {
                 *border_color = Color::WHITE.into();
@@ -249,8 +310,11 @@ pub fn interact_button(
                     game_data.player_guess.clone(),
                     game_data.green_tally,
                     game_data.red_tally,
+                    &asset_server,
+                    &mut commands,
+                    &mut game_data,
                 );
-                next_state.set(AppState::StartGame);
+                next_state.set(AppState::ShowResults);
             }
             Interaction::Hovered => {
                 *border_color = Color::BLACK.into();
@@ -259,5 +323,20 @@ pub fn interact_button(
                 *border_color = Color::WHITE.into();
             }
         }
+    }
+}
+
+pub fn show_results(
+    time: Res<Time>,
+    mut timer: ResMut<MyTimer>,
+    mut next_state: ResMut<NextState<AppState>>,
+    game_data: ResMut<GameData>,
+) {
+    timer.timer.tick(time.delta());
+    if timer.timer.finished() && game_data.result == "Correct!" {
+        next_state.set(AppState::StartGame);
+        timer.timer.reset();
+    } else if timer.timer.finished() && game_data.result == "Incorrect!" {
+        next_state.set(AppState::GameOver);
     }
 }
