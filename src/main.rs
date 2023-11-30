@@ -9,14 +9,14 @@ fn main() {
         .add_systems(Startup, startup)
         .add_state::<AppState>()
         .add_systems(
-            OnEnter(AppState::StartGame),
-            (game_mod::clear_shapes, game_mod::game).chain(),
+            OnEnter(AppState::StartRound),
+            (game_mod::clear_shapes, game_mod::play_game).chain(),
         )
         .add_systems(
             Update,
             game_mod::show_results.run_if(in_state(AppState::ShowResults)),
         )
-        .add_systems(OnExit(AppState::GameOver), game_mod::game_over)
+        .add_systems(OnEnter(AppState::GameOver), game_mod::game_over)
         .add_systems(Update, game_mod::interact_button)
         .insert_resource(MyTimer {
             timer: Timer::from_seconds(0.5, TimerMode::Once),
@@ -31,7 +31,7 @@ fn startup(mut commands: Commands, asset_server: Res<AssetServer>) {
 #[derive(Debug, Clone, Copy, Default, Eq, PartialEq, Hash, States)]
 pub enum AppState {
     #[default]
-    StartGame,
+    StartRound,
     Pause,
     ShowResults,
     GameOver,
