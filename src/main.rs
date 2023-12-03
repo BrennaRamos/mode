@@ -12,14 +12,18 @@ fn main() {
             OnEnter(AppState::StartRound),
             (game_mod::clear_shapes, game_mod::play_game).chain(),
         )
+        .add_systems(OnEnter(AppState::GameOver), game_mod::game_over)
+        .add_systems(Update, game_mod::interact_button)
         .add_systems(
             Update,
             game_mod::show_results.run_if(in_state(AppState::ShowResults)),
         )
-        .add_systems(OnEnter(AppState::GameOver), game_mod::game_over)
-        .add_systems(Update, game_mod::interact_button)
-        .insert_resource(MyTimer {
-            timer: Timer::from_seconds(0.5, TimerMode::Once),
+        .insert_resource(ResultTimer {
+            result_timer: Timer::from_seconds(0.5, TimerMode::Once),
+        })
+        .add_systems(Update, game_mod::pause.run_if(in_state(AppState::Pause)))
+        .insert_resource(PauseTimer {
+            pause_timer: Timer::from_seconds(5.0, TimerMode::Once),
         })
         .run();
 }

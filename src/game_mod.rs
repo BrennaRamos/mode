@@ -28,8 +28,13 @@ impl Default for GameData {
 }
 
 #[derive(Resource)]
-pub struct MyTimer {
-    pub timer: Timer,
+pub struct ResultTimer {
+    pub result_timer: Timer,
+}
+
+#[derive(Resource)]
+pub struct PauseTimer {
+    pub pause_timer: Timer,
 }
 
 #[derive(Component)]
@@ -55,6 +60,7 @@ pub fn play_game(
     game_data.os = 0;
     let mut rng = rand::thread_rng();
 
+    println!("{}", game_data.player_guess);
     let title = format!("Level {} - Which color has more tallies?", game_data.level);
     let font = asset_server.load("fonts/FiraSans-Bold.ttf");
     let level_entity = commands.spawn({
@@ -360,10 +366,12 @@ pub fn interact_button(
     asset_server: Res<AssetServer>,
     mut commands: Commands,
     keyboard_input: Res<Input<KeyCode>>,
+    mut timer: ResMut<PauseTimer>,
 ) {
     if keyboard_input.just_released(KeyCode::A) {
         info!("'A' currently pressed");
         game_data.player_guess = "x".to_string();
+        timer.pause_timer.pause();
         process_guess(
             game_data.player_guess.clone(),
             game_data.exes,
@@ -378,6 +386,7 @@ pub fn interact_button(
     if keyboard_input.just_released(KeyCode::D) {
         info!("'D' just pressed");
         game_data.player_guess = "o".to_string();
+        timer.pause_timer.pause();
         process_guess(
             game_data.player_guess.clone(),
             game_data.exes,
@@ -397,6 +406,7 @@ pub fn interact_button(
                     AnswerButton::X => game_data.player_guess = "x".to_string(),
                     AnswerButton::O => game_data.player_guess = "o".to_string(),
                 }
+                timer.pause_timer.pause();
                 process_guess(
                     game_data.player_guess.clone(),
                     game_data.exes,
@@ -419,19 +429,39 @@ pub fn interact_button(
 
 pub fn show_results(
     time: Res<Time>,
-    mut timer: ResMut<MyTimer>,
+    mut timer: ResMut<ResultTimer>,
     mut next_state: ResMut<NextState<AppState>>,
     game_data: ResMut<GameData>,
 ) {
-    timer.timer.tick(time.delta());
-    if timer.timer.finished() {
+    timer.result_timer.tick(time.delta());
+    if timer.result_timer.finished() {
         match game_data.result {
             Result::Correct => {
                 next_state.set(AppState::StartRound);
-                timer.timer.reset();
+                timer.result_timer.reset();
             }
             Result::Incorrect => next_state.set(AppState::GameOver),
         }
+    }
+}
+
+pub fn pause(
+    time: Res<Time>,
+    mut timer: ResMut<PauseTimer>,
+    mut next_state: ResMut<NextState<AppState>>,
+    mut game_data: ResMut<GameData>,
+) {
+    timer.pause_timer.tick(time.delta());
+
+    if timer.pause_timer.finished() {
+        if game_data.player_guess.is_empty() {
+            next_state.set(AppState::GameOver);
+        }
+    }
+    if timer.pause_timer.paused() {
+        timer.pause_timer.unpause();
+        timer.pause_timer.reset();
+        game_data.player_guess.clear();
     }
 }
 
