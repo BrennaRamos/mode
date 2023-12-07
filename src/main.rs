@@ -39,7 +39,7 @@ fn main() {
         .insert_resource(PauseTimer {
             pause_timer: Timer::from_seconds(5.0, TimerMode::Once),
         })
-        .add_systems(OnEnter(AppState::MainMenu), main_menu::start_game)
+        .add_systems(OnEnter(AppState::MainMenu), main_menu::setup_menu)
         .add_systems(
             OnExit(AppState::MainMenu),
             (main_menu::clear_shapes, game_mod::setup_ui),
@@ -47,8 +47,12 @@ fn main() {
         .run();
 }
 
-fn startup(mut commands: Commands, asset_server: Res<AssetServer>) {
-    setup_menu(&mut commands, &asset_server);
+fn startup(
+    commands: Commands,
+    asset_server: Res<AssetServer>,
+    camera_query: Query<Entity, With<Camera2d>>,
+) {
+    setup_menu(commands, asset_server, camera_query);
 }
 
 #[derive(Debug, Clone, Copy, Default, Eq, PartialEq, Hash, States)]

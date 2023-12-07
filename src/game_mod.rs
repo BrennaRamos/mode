@@ -1,3 +1,4 @@
+use firestore::*;
 use std::time::Duration;
 
 use bevy::prelude::*;
@@ -68,6 +69,9 @@ pub fn play_game(
     mut next_state: ResMut<NextState<AppState>>,
     mut game_data: ResMut<GameData>,
 ) {
+    game_data.player_guess.clear();
+    game_data.level = 1;
+    game_data.time_elapsed = Duration::new(0, 0);
     game_data.exes = 0;
     game_data.os = 0;
     let mut rng = rand::thread_rng();
@@ -448,6 +452,7 @@ pub fn show_results(
             }
             Result::Incorrect => {
                 next_state.set(AppState::GameOver);
+                timer.result_timer.reset();
             }
         }
     }
@@ -502,13 +507,19 @@ pub fn clear_shapes(
 
 pub fn game_over(
     mut commands: Commands,
-    mut query: Query<Entity>,
+    mut query_text: Query<Entity, With<Text>>,
+    mut query_button: Query<Entity, With<Style>>,
     mut next_state: ResMut<NextState<AppState>>,
 ) {
-    next_state.set(AppState::MainMenu);
-    for entity in query.iter_mut() {
+    for entity in query_text.iter_mut() {
         if let Some(entity) = commands.get_entity(entity) {
             entity.despawn_recursive();
         }
     }
+    for entity in query_button.iter_mut() {
+        if let Some(entity) = commands.get_entity(entity) {
+            entity.despawn_recursive();
+        }
+    }
+    next_state.set(AppState::MainMenu);
 }

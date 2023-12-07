@@ -7,9 +7,16 @@ pub enum ActionButton {
     Quit,
 }
 
-pub fn start_game() {}
-
-pub fn setup_menu(commands: &mut Commands, asset_server: &Res<AssetServer>) {
+pub fn setup_menu(
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
+    camera_query: Query<Entity, With<Camera2d>>,
+) {
+    for entity in camera_query.iter() {
+        if let Some(entity) = commands.get_entity(entity) {
+            entity.despawn_recursive();
+        }
+    }
     // Spawn Camera in Foreground
     commands.spawn(Camera2dBundle {
         camera_2d: Camera2d {
