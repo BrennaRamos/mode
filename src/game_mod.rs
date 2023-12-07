@@ -1,4 +1,6 @@
-use bevy::{core_pipeline::clear_color::ClearColorConfig, prelude::*};
+use std::time::Duration;
+
+use bevy::prelude::*;
 //use chrono::*;
 //use colored::Colorize;
 use rand::Rng;
@@ -13,6 +15,7 @@ pub struct GameData {
     os: i32,
     result: Result,
     level: i32,
+    time_elapsed: Duration,
 }
 
 impl Default for GameData {
@@ -23,8 +26,17 @@ impl Default for GameData {
             os: Default::default(),
             result: Default::default(),
             level: 1,
+            time_elapsed: Duration::new(0, 0),
         }
     }
+}
+
+#[derive(Resource, Default)]
+pub struct PlayerData {
+    username: String,
+    pin: i32,
+    level_reached: i32,
+    speed: Duration,
 }
 
 #[derive(Resource)]
@@ -60,10 +72,10 @@ pub fn play_game(
     game_data.os = 0;
     let mut rng = rand::thread_rng();
 
-    println!("{}", game_data.player_guess);
+    // Spawn Level Text
     let title = format!("Level {} - Which color has more tallies?", game_data.level);
     let font = asset_server.load("fonts/FiraSans-Bold.ttf");
-    let level_entity = commands.spawn({
+    commands.spawn({
         Text2dBundle {
             text: Text::from_section(
                 title,
@@ -127,7 +139,7 @@ fn print_shapes(
     if random % 2 == 0 {
         //for _iter in 0..1 {
         let font = asset_server.load("fonts/FiraSans-Bold.ttf");
-        let pop_entity = commands.spawn({
+        commands.spawn({
             Text2dBundle {
                 text: Text::from_section(
                     "X",
@@ -185,7 +197,8 @@ fn process_guess(
 ) -> bool {
     let font = asset_server.load("fonts/FiraSans-Bold.ttf");
     if guess.trim() == "x" && exes > os {
-        let correct_x_entity = commands.spawn({
+        // Spawn Correct
+        commands.spawn({
             Text2dBundle {
                 text: Text::from_section(
                     "Correct!",
@@ -203,7 +216,8 @@ fn process_guess(
         game_data.result = Result::Correct;
         return true;
     } else if guess.trim() == "o" && os > exes {
-        let correct_o_entity = commands.spawn({
+        // Spawn Correct
+        commands.spawn({
             Text2dBundle {
                 text: Text::from_section(
                     "Correct!",
@@ -221,7 +235,8 @@ fn process_guess(
         game_data.result = Result::Correct;
         return true;
     } else {
-        let incorrect_entity = commands.spawn({
+        //Spawn Incorrect
+        commands.spawn({
             Text2dBundle {
                 text: Text::from_section(
                     "Incorrect!",
@@ -241,15 +256,7 @@ fn process_guess(
     }
 }
 
-pub fn setup_ui(commands: &mut Commands, asset_server: &Res<AssetServer>) {
-    // Spawn Camera in Foreground
-    commands.spawn(Camera2dBundle {
-        camera_2d: Camera2d {
-            clear_color: ClearColorConfig::Custom(Color::GRAY),
-        },
-        transform: Transform::from_translation(Vec3::new(0.0, 0.0, 5.0)),
-        ..default()
-    });
+pub fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands
         .spawn((
             NodeBundle {
@@ -368,8 +375,8 @@ pub fn interact_button(
     keyboard_input: Res<Input<KeyCode>>,
     mut timer: ResMut<PauseTimer>,
 ) {
+    // Keyboard Input
     if keyboard_input.just_released(KeyCode::A) {
-        info!("'A' currently pressed");
         game_data.player_guess = "x".to_string();
         timer.pause_timer.pause();
         process_guess(
@@ -384,7 +391,6 @@ pub fn interact_button(
     }
 
     if keyboard_input.just_released(KeyCode::D) {
-        info!("'D' just pressed");
         game_data.player_guess = "o".to_string();
         timer.pause_timer.pause();
         process_guess(
@@ -397,7 +403,7 @@ pub fn interact_button(
         );
         next_state.set(AppState::ShowResults);
     }
-    // Buttons
+    // UI Button Input
     for (interaction, answer_button, mut border_color) in interaction_query.iter_mut() {
         match *interaction {
             Interaction::Pressed => {
@@ -440,9 +446,15 @@ pub fn show_results(
                 next_state.set(AppState::StartRound);
                 timer.result_timer.reset();
             }
-            Result::Incorrect => next_state.set(AppState::GameOver),
+            Result::Incorrect => {
+                next_state.set(AppState::GameOver);
+            }
         }
     }
+}
+
+pub fn tick_elapsed(mut game_data: ResMut<GameData>, time: Res<Time>) {
+    game_data.time_elapsed += time.delta();
 }
 
 pub fn pause(
@@ -465,17 +477,38 @@ pub fn pause(
     }
 }
 
+pub fn upload_score(game_data: ResMut<GameData>, mut player_data: ResMut<PlayerData>) {
+    player_data.username = "sampleName".into();
+    player_data.pin = 1234;
+    player_data.level_reached = game_data.level;
+    player_data.speed = game_data.time_elapsed;
+
+    println!(
+        "{} {} {} {:?}",
+        player_data.username, player_data.pin, player_data.level_reached, player_data.speed
+    );
+}
+
 pub fn clear_shapes(
     mut commands: Commands,
     mut query: Query<Entity, (With<Text>, Without<AnswerButton>)>,
 ) {
     for entity in query.iter_mut() {
-        commands.entity(entity).despawn_recursive();
+        if let Some(entity) = commands.get_entity(entity) {
+            entity.despawn_recursive();
+        }
     }
 }
 
-pub fn game_over(mut commands: Commands, mut query: Query<Entity>) {
+pub fn game_over(
+    mut commands: Commands,
+    mut query: Query<Entity>,
+    mut next_state: ResMut<NextState<AppState>>,
+) {
+    next_state.set(AppState::MainMenu);
     for entity in query.iter_mut() {
-        commands.entity(entity).despawn_recursive();
+        if let Some(entity) = commands.get_entity(entity) {
+            entity.despawn_recursive();
+        }
     }
 }
