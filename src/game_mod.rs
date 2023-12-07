@@ -36,7 +36,7 @@ pub struct PlayerData {
     username: String,
     pin: i32,
     level_reached: i32,
-    speed: Duration,
+    speed: f32,
 }
 
 #[derive(Resource)]
@@ -481,7 +481,7 @@ pub fn upload_score(game_data: ResMut<GameData>, mut player_data: ResMut<PlayerD
     player_data.username = "sampleName".into();
     player_data.pin = 1234;
     player_data.level_reached = game_data.level;
-    player_data.speed = game_data.time_elapsed;
+    player_data.speed = game_data.time_elapsed.as_secs_f32();
 
     println!(
         "{} {} {} {:?}",
