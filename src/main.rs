@@ -41,6 +41,10 @@ fn main() {
         })
         .add_systems(OnEnter(AppState::MainMenu), main_menu::setup_menu)
         .add_systems(
+            Update,
+            (main_menu::animate_menu_title).run_if(in_state(AppState::MainMenu)),
+        )
+        .add_systems(
             OnExit(AppState::MainMenu),
             (main_menu::clear_shapes, game_mod::setup_ui),
         )
@@ -51,8 +55,9 @@ fn startup(
     commands: Commands,
     asset_server: Res<AssetServer>,
     camera_query: Query<Entity, With<Camera2d>>,
+    texture_atlases: ResMut<Assets<TextureAtlas>>,
 ) {
-    setup_menu(commands, asset_server, camera_query);
+    setup_menu(commands, asset_server, camera_query, texture_atlases);
 }
 
 #[derive(Debug, Clone, Copy, Default, Eq, PartialEq, Hash, States)]

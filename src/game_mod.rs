@@ -1,4 +1,3 @@
-use firestore::*;
 use std::time::Duration;
 
 use bevy::prelude::*;
@@ -431,7 +430,7 @@ pub fn interact_button(
                 *border_color = Color::BLACK.into();
             }
             Interaction::None => {
-                *border_color = Color::WHITE.into();
+                *border_color = Color::rgb(82.0 / 255.0, 88.0 / 255.0, 32.0 / 255.0).into();
             }
         }
     }

@@ -1,4 +1,5 @@
 use crate::AppState;
+use bevy::render::color::*;
 use bevy::{core_pipeline::clear_color::ClearColorConfig, prelude::*};
 
 #[derive(Component)]
@@ -7,10 +8,20 @@ pub enum ActionButton {
     Quit,
 }
 
+#[derive(Component)]
+pub struct AnimationIndices {
+    first: usize,
+    last: usize,
+}
+
+#[derive(Component, Deref, DerefMut)]
+pub struct AnimationTimer(Timer);
+
 pub fn setup_menu(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
     camera_query: Query<Entity, With<Camera2d>>,
+    mut texture_atlases: ResMut<Assets<TextureAtlas>>,
 ) {
     for entity in camera_query.iter() {
         if let Some(entity) = commands.get_entity(entity) {
@@ -20,30 +31,29 @@ pub fn setup_menu(
     // Spawn Camera in Foreground
     commands.spawn(Camera2dBundle {
         camera_2d: Camera2d {
-            clear_color: ClearColorConfig::Custom(Color::GRAY),
+            clear_color: ClearColorConfig::Custom(Color::BISQUE),
         },
         transform: Transform::from_translation(Vec3::new(0.0, 0.0, 5.0)),
         ..default()
     });
-    // Spawn Title text
-    let title = format!("Odemay");
-    let font = asset_server.load("fonts/FiraSans-Bold.ttf");
-    commands.spawn({
-        Text2dBundle {
-            text: Text::from_section(
-                title,
-                TextStyle {
-                    font,
-                    font_size: 64.0,
-                    color: Color::WHITE,
-                },
-            )
-            .with_alignment(TextAlignment::Center),
-            transform: Transform::from_translation(Vec3::new(0.0, 200.0, 0.0)),
+    // Spawn Menu Title
+    let texture_handle = asset_server.load("Icons/Title.png");
+    let texture_atlas =
+        TextureAtlas::from_grid(texture_handle, Vec2::new(960.0, 540.0), 6, 1, None, None);
+    let texture_atlas_handle = texture_atlases.add(texture_atlas);
+    // Use only the subset of sprites in the sheet that make up the run animation
+    let animation_indices = AnimationIndices { first: 0, last: 5 };
+    commands.spawn((
+        SpriteSheetBundle {
+            texture_atlas: texture_atlas_handle,
+            sprite: TextureAtlasSprite::new(animation_indices.first),
+            transform: Transform::from_translation(Vec3::new(50.0, 150.0, 0.0)),
             ..default()
-        }
-    });
-    // Spawn menu buttons
+        },
+        animation_indices,
+        AnimationTimer(Timer::from_seconds(0.5, TimerMode::Repeating)),
+    ));
+    // Spawn Menu Buttons
     commands
         .spawn((
             NodeBundle {
@@ -90,7 +100,7 @@ pub fn setup_menu(
                             TextStyle {
                                 font: asset_server.load("fonts/FiraSans-Bold.ttf"),
                                 font_size: 40.0,
-                                color: Color::BLACK,
+                                color: Color::rgb(82.0 / 255.0, 88.0 / 255.0, 32.0 / 255.0),
                             },
                         ),
                         ActionButton::Play,
@@ -128,13 +138,33 @@ pub fn setup_menu(
                             TextStyle {
                                 font: asset_server.load("fonts/FiraSans-Bold.ttf"),
                                 font_size: 40.0,
-                                color: Color::BLACK,
+                                color: Color::rgb(82.0 / 255.0, 88.0 / 255.0, 32.0 / 255.0),
                             },
                         ),
                         ActionButton::Quit,
                     ));
                 });
         });
+}
+
+pub fn animate_menu_title(
+    time: Res<Time>,
+    mut query: Query<(
+        &AnimationIndices,
+        &mut AnimationTimer,
+        &mut TextureAtlasSprite,
+    )>,
+) {
+    for (indices, mut timer, mut sprite) in &mut query {
+        timer.tick(time.delta());
+        if timer.just_finished() {
+            sprite.index = if sprite.index == indices.last {
+                indices.first
+            } else {
+                sprite.index + 1
+            };
+        }
+    }
 }
 
 pub fn interact_menu(
@@ -163,17 +193,26 @@ pub fn interact_menu(
                 }
             }
             Interaction::Hovered => {
-                *border_color = Color::BLUE.into();
+                *border_color = Color::SALMON.into();
             }
             Interaction::None => {
-                *border_color = Color::BLACK.into();
+                *border_color = Color::rgb(82.0 / 255.0, 88.0 / 255.0, 32.0 / 255.0).into();
             }
         }
     }
 }
 
-pub fn clear_shapes(mut commands: Commands, mut query: Query<Entity, With<ActionButton>>) {
+pub fn clear_shapes(
+    mut commands: Commands,
+    mut query: Query<Entity, With<ActionButton>>,
+    mut query_title: Query<Entity, With<AnimationTimer>>,
+) {
     for entity in query.iter_mut() {
+        if let Some(entity) = commands.get_entity(entity) {
+            entity.despawn_recursive();
+        }
+    }
+    for entity in query_title.iter_mut() {
         if let Some(entity) = commands.get_entity(entity) {
             entity.despawn_recursive();
         }
