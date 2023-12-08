@@ -1,10 +1,11 @@
-use crate::AppState;
+use crate::{game_mod, AppState};
 use bevy::render::color::*;
 use bevy::{core_pipeline::clear_color::ClearColorConfig, prelude::*};
 
 #[derive(Component)]
 pub enum ActionButton {
     Play,
+    Leaderboard,
     Quit,
 }
 
@@ -145,6 +146,60 @@ pub fn setup_menu(
                     ));
                 });
         });
+    // Spawn Settings Button
+    commands
+        .spawn((
+            NodeBundle {
+                style: Style {
+                    // bottom left button
+                    width: Val::Percent(100.),
+                    height: Val::Percent(100.),
+                    justify_content: JustifyContent::SpaceEvenly,
+                    align_items: AlignItems::Center,
+                    ..default()
+                },
+                ..default()
+            },
+            ActionButton::Play,
+        ))
+        .with_children(|parent| {
+            parent
+                .spawn((
+                    ButtonBundle {
+                        style: Style {
+                            width: Val::Px(250.),
+                            height: Val::Px(65.),
+                            // horizontally center child text
+                            justify_content: JustifyContent::Center,
+                            // vertically center child text
+                            align_items: AlignItems::Center,
+                            border: UiRect {
+                                top: Val::Px(2.),
+                                left: Val::Px(2.),
+                                bottom: Val::Px(2.),
+                                right: Val::Px(2.),
+                            },
+                            ..default()
+                        },
+                        background_color: Color::WHITE.into(),
+                        ..default()
+                    },
+                    ActionButton::Leaderboard,
+                ))
+                .with_children(|parent| {
+                    parent.spawn((
+                        TextBundle::from_section(
+                            "Leaderboard",
+                            TextStyle {
+                                font: asset_server.load("fonts/FiraSans-Bold.ttf"),
+                                font_size: 40.0,
+                                color: Color::rgb(82.0 / 255.0, 88.0 / 255.0, 32.0 / 255.0),
+                            },
+                        ),
+                        ActionButton::Leaderboard,
+                    ));
+                });
+        });
 }
 
 pub fn animate_menu_title(
@@ -189,6 +244,7 @@ pub fn interact_menu(
                 *border_color = Color::WHITE.into();
                 match answer_button {
                     ActionButton::Play => next_state.set(AppState::StartRound),
+                    ActionButton::Leaderboard => next_state.set(AppState::Leaderboard),
                     ActionButton::Quit => next_state.set(AppState::QuitGame),
                 }
             }
@@ -206,6 +262,8 @@ pub fn clear_shapes(
     mut commands: Commands,
     mut query: Query<Entity, With<ActionButton>>,
     mut query_title: Query<Entity, With<AnimationTimer>>,
+    current_state: Res<State<AppState>>,
+    asset_server: Res<AssetServer>,
 ) {
     for entity in query.iter_mut() {
         if let Some(entity) = commands.get_entity(entity) {
@@ -216,6 +274,13 @@ pub fn clear_shapes(
         if let Some(entity) = commands.get_entity(entity) {
             entity.despawn_recursive();
         }
+    }
+
+    match current_state.get() {
+        AppState::StartRound => {
+            game_mod::setup_ui(&mut commands, &asset_server);
+        }
+        _ => {}
     }
 }
 

@@ -259,7 +259,7 @@ fn process_guess(
     }
 }
 
-pub fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
+pub fn setup_ui(commands: &mut Commands, asset_server: &Res<AssetServer>) {
     commands
         .spawn((
             NodeBundle {
