@@ -1,8 +1,10 @@
 use bevy::prelude::*;
 mod game_mod;
+mod how_to_play;
 mod leaderboard;
 mod main_menu;
 use game_mod::*;
+use how_to_play::*;
 use leaderboard::*;
 use main_menu::*;
 
@@ -43,6 +45,7 @@ fn main() {
         })
         .add_systems(OnEnter(AppState::MainMenu), main_menu::setup_menu)
         .add_systems(OnEnter(AppState::Leaderboard), leaderboard::setup_ui)
+        .add_systems(OnEnter(AppState::HowToPlay), how_to_play::setup_ui)
         .add_systems(
             Update,
             (main_menu::animate_menu_title).run_if(in_state(AppState::MainMenu)),
@@ -70,4 +73,5 @@ pub enum AppState {
     GameOver,
     QuitGame,
     Leaderboard,
+    HowToPlay,
 }

@@ -142,6 +142,7 @@ fn print_shapes(
     if random % 2 == 0 {
         //for _iter in 0..1 {
         let font = asset_server.load("fonts/FiraSans-Bold.ttf");
+        // Spawn Sprite 1
         commands.spawn({
             Text2dBundle {
                 text: Text::from_section(
@@ -166,6 +167,7 @@ fn print_shapes(
     } else {
         //for _iter in 0..print_amt {
         let font = asset_server.load("fonts/FiraSans-Bold.ttf");
+        // Spawn Sprite 2
         commands.spawn({
             Text2dBundle {
                 text: Text::from_section(

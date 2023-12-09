@@ -6,6 +6,7 @@ use bevy::{core_pipeline::clear_color::ClearColorConfig, prelude::*};
 pub enum ActionButton {
     Play,
     Leaderboard,
+    HowToPlay,
     Quit,
 }
 
@@ -108,60 +109,7 @@ pub fn setup_menu(
                     ));
                 });
         })
-        .with_children(|parent| {
-            parent
-                .spawn((
-                    ButtonBundle {
-                        style: Style {
-                            width: Val::Px(150.),
-                            height: Val::Px(65.),
-                            // horizontally center child text
-                            justify_content: JustifyContent::Center,
-                            // vertically center child text
-                            align_items: AlignItems::Center,
-                            border: UiRect {
-                                top: Val::Px(2.),
-                                left: Val::Px(2.),
-                                bottom: Val::Px(2.),
-                                right: Val::Px(2.),
-                            },
-                            ..default()
-                        },
-                        background_color: Color::WHITE.into(),
-                        ..default()
-                    },
-                    ActionButton::Quit,
-                ))
-                .with_children(|parent| {
-                    parent.spawn((
-                        TextBundle::from_section(
-                            "Quit",
-                            TextStyle {
-                                font: asset_server.load("fonts/FiraSans-Bold.ttf"),
-                                font_size: 40.0,
-                                color: Color::rgb(82.0 / 255.0, 88.0 / 255.0, 32.0 / 255.0),
-                            },
-                        ),
-                        ActionButton::Quit,
-                    ));
-                });
-        });
-    // Spawn Settings Button
-    commands
-        .spawn((
-            NodeBundle {
-                style: Style {
-                    // bottom left button
-                    width: Val::Percent(100.),
-                    height: Val::Percent(100.),
-                    justify_content: JustifyContent::SpaceEvenly,
-                    align_items: AlignItems::Center,
-                    ..default()
-                },
-                ..default()
-            },
-            ActionButton::Play,
-        ))
+        // Spawn Leaderboard Button
         .with_children(|parent| {
             parent
                 .spawn((
@@ -197,6 +145,83 @@ pub fn setup_menu(
                             },
                         ),
                         ActionButton::Leaderboard,
+                    ));
+                });
+        })
+        // Spawn How To Play Button
+        .with_children(|parent| {
+            parent
+                .spawn((
+                    ButtonBundle {
+                        style: Style {
+                            width: Val::Px(250.),
+                            height: Val::Px(65.),
+                            // horizontally center child text
+                            justify_content: JustifyContent::Center,
+                            // vertically center child text
+                            align_items: AlignItems::Center,
+                            border: UiRect {
+                                top: Val::Px(2.),
+                                left: Val::Px(2.),
+                                bottom: Val::Px(2.),
+                                right: Val::Px(2.),
+                            },
+                            ..default()
+                        },
+                        background_color: Color::WHITE.into(),
+                        ..default()
+                    },
+                    ActionButton::HowToPlay,
+                ))
+                .with_children(|parent| {
+                    parent.spawn((
+                        TextBundle::from_section(
+                            "How to Play",
+                            TextStyle {
+                                font: asset_server.load("fonts/FiraSans-Bold.ttf"),
+                                font_size: 40.0,
+                                color: Color::rgb(82.0 / 255.0, 88.0 / 255.0, 32.0 / 255.0),
+                            },
+                        ),
+                        ActionButton::HowToPlay,
+                    ));
+                });
+        })
+        .with_children(|parent| {
+            parent
+                .spawn((
+                    ButtonBundle {
+                        style: Style {
+                            width: Val::Px(150.),
+                            height: Val::Px(65.),
+                            // horizontally center child text
+                            justify_content: JustifyContent::Center,
+                            // vertically center child text
+                            align_items: AlignItems::Center,
+                            border: UiRect {
+                                top: Val::Px(2.),
+                                left: Val::Px(2.),
+                                bottom: Val::Px(2.),
+                                right: Val::Px(2.),
+                            },
+                            ..default()
+                        },
+                        background_color: Color::WHITE.into(),
+                        ..default()
+                    },
+                    ActionButton::Quit,
+                ))
+                .with_children(|parent| {
+                    parent.spawn((
+                        TextBundle::from_section(
+                            "Quit",
+                            TextStyle {
+                                font: asset_server.load("fonts/FiraSans-Bold.ttf"),
+                                font_size: 40.0,
+                                color: Color::rgb(82.0 / 255.0, 88.0 / 255.0, 32.0 / 255.0),
+                            },
+                        ),
+                        ActionButton::Quit,
                     ));
                 });
         });
@@ -243,6 +268,7 @@ pub fn interact_menu(
             Interaction::Pressed => {
                 *border_color = Color::WHITE.into();
                 match answer_button {
+                    ActionButton::HowToPlay => next_state.set(AppState::HowToPlay),
                     ActionButton::Play => next_state.set(AppState::StartRound),
                     ActionButton::Leaderboard => next_state.set(AppState::Leaderboard),
                     ActionButton::Quit => next_state.set(AppState::QuitGame),
