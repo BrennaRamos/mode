@@ -24,7 +24,10 @@ fn main() {
             (game_mod::game_over, game_mod::upload_score),
         )
         .add_systems(OnEnter(AppState::QuitGame), main_menu::quit_game)
-        .add_systems(Update, game_mod::interact_button)
+        .add_systems(
+            Update,
+            game_mod::interact_button.run_if(in_state(AppState::Pause)),
+        )
         .add_systems(
             Update,
             main_menu::interact_menu.run_if(in_state(AppState::MainMenu)),

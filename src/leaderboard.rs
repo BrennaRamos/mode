@@ -1,9 +1,6 @@
-use crate::AppState;
-use bevy::a11y::accesskit::VerticalOffset;
-use bevy::render::color::*;
-use bevy::{core_pipeline::clear_color::ClearColorConfig, prelude::*};
+use bevy::prelude::*;
 
-const OLIVE_GREEN: Color = Color::rgb(82.0 / 255.0, 88.0 / 255.0, 32.0 / 255.0);
+use crate::{main_menu::OLIVE_GREEN, AppState};
 
 #[derive(Component)]
 pub enum BackButton {

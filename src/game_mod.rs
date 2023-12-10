@@ -1,12 +1,8 @@
+use bevy::prelude::*;
+use rand::Rng;
 use std::time::Duration;
 
-use bevy::prelude::*;
-//use chrono::*;
-//use colored::Colorize;
-use rand::Rng;
-//use std::{io, process::exit};
-
-use crate::AppState;
+use crate::{main_menu::OLIVE_GREEN, AppState};
 
 #[derive(Resource)]
 pub struct GameData {
@@ -85,7 +81,7 @@ pub fn play_game(
                 TextStyle {
                     font,
                     font_size: 64.0,
-                    color: Color::WHITE,
+                    color: OLIVE_GREEN,
                 },
             )
             .with_alignment(TextAlignment::Center),

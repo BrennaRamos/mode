@@ -2,7 +2,7 @@ use crate::{game_mod, AppState};
 use bevy::render::color::*;
 use bevy::{core_pipeline::clear_color::ClearColorConfig, prelude::*};
 
-const OLIVE_GREEN: Color = Color::rgb(82.0 / 255.0, 88.0 / 255.0, 32.0 / 255.0);
+pub const OLIVE_GREEN: Color = Color::rgb(82.0 / 255.0, 88.0 / 255.0, 32.0 / 255.0);
 
 #[derive(Component)]
 pub enum ActionButton {
