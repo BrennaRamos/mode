@@ -35,7 +35,7 @@ fn main() {
         )
         .add_systems(
             Update,
-            (leaderboard::interact_button, main_menu::spawn_chibi)
+            (leaderboard::interact_button, leaderboard::spawn_chibi)
                 .run_if(in_state(AppState::Leaderboard)),
         )
         .add_systems(

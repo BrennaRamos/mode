@@ -116,7 +116,7 @@ pub fn interact_button(
     }
 }
 
-pub fn spawn_chibis(mut commands: Commands, asset_server: Res<AssetServer>) {
+pub fn spawn_chibi(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands.spawn(SpriteBundle {
         texture: asset_server.load("characters/baker.png"),
         transform: Transform::from_xyz(0.0, -200.0, 0.0).with_scale(Vec3 {
