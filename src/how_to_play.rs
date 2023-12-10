@@ -12,7 +12,7 @@ pub fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
     let title = format!("How To Play");
     let font = asset_server.load("fonts/FiraSans-Bold.ttf");
     commands.spawn({
-        Text2dBundle {
+        TextBundle {
             text: Text::from_section(
                 title,
                 TextStyle {
@@ -22,16 +22,23 @@ pub fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
                 },
             )
             .with_alignment(TextAlignment::Center),
-            transform: Transform::from_translation(Vec3::new(0.0, 150.0, 0.0)),
+            style: Style {
+                top: Val::Percent(10.0),
+                left: Val::Percent(38.0),
+                ..default()
+            },
             ..default()
         }
     });
 
     // Spawn Subtitle Text
-    let title = format!("It's a fast-paced guessing game! The rules are simple:");
+    let title = format!(
+        "The village of Odemay is hungry! They need more fruit to survive the winter. 
+    Could you lend a hand in picking the fruit that is more abundant?"
+    );
     let font = asset_server.load("fonts/FiraSans-Bold.ttf");
     commands.spawn({
-        Text2dBundle {
+        TextBundle {
             text: Text::from_section(
                 title,
                 TextStyle {
@@ -41,20 +48,26 @@ pub fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
                 },
             )
             .with_alignment(TextAlignment::Center),
-            transform: Transform::from_translation(Vec3::new(0.0, 60.0, 0.0)),
+            style: Style {
+                top: Val::Percent(40.0),
+                left: Val::Percent(15.0),
+                ..default()
+            },
             ..default()
         }
     });
 
     // Spawn Bullet Point Text
-    let title = format!("    • You must guess which fruit appears most frequently on the screen. The mode, if you will...
-    • Click the corresponding button/key to submit your answer
-    • Each round gives you five seconds to guess. Guess as quickly as you can for a better score!
+    let title = format!(
+        "    • Two types of fruit will spawn on the screen in different quantities
+    • Choose which fruit there is more of using the Z and X keys or the on-screen buttons
+    • Each level gives you five seconds to guess. Guess as quickly as you can for a better score!
     • If you guess incorrectly, the game is over and you go back to the main menu
-    • Depending on your performance, you can unlock more characters to dance with you :)");
+    • Depending on your performance, you can unlock more characters for your village"
+    );
     let font = asset_server.load("fonts/FiraSans-Bold.ttf");
     commands.spawn({
-        Text2dBundle {
+        TextBundle {
             text: Text::from_section(
                 title,
                 TextStyle {
@@ -63,8 +76,13 @@ pub fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
                     color: OLIVE_GREEN,
                 },
             )
-            .with_alignment(TextAlignment::Left),
-            transform: Transform::from_translation(Vec3::new(0.0, -80.0, 0.0)),
+            .with_alignment(TextAlignment::Center),
+            style: Style {
+                top: Val::Percent(55.0),
+                left: Val::Percent(5.0),
+
+                ..default()
+            },
             ..default()
         }
     });
@@ -112,10 +130,10 @@ pub fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
                 .with_children(|parent| {
                     parent.spawn((
                         TextBundle::from_section(
-                            "Back to Main Menu",
+                            "Back",
                             TextStyle {
                                 font: asset_server.load("fonts/FiraSans-Bold.ttf"),
-                                font_size: 28.0,
+                                font_size: 40.0,
                                 color: OLIVE_GREEN,
                             },
                         ),

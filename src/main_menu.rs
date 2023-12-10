@@ -9,6 +9,7 @@ pub enum ActionButton {
     Play,
     Leaderboard,
     HowToPlay,
+    Settings,
     Quit,
 }
 
@@ -150,6 +151,45 @@ pub fn setup_menu(
                     ));
                 });
         })
+        // Spawn Settings Button
+        .with_children(|parent| {
+            parent
+                .spawn((
+                    ButtonBundle {
+                        style: Style {
+                            width: Val::Px(250.),
+                            height: Val::Px(65.),
+                            // horizontally center child text
+                            justify_content: JustifyContent::Center,
+                            // vertically center child text
+                            align_items: AlignItems::Center,
+                            border: UiRect {
+                                top: Val::Px(2.),
+                                left: Val::Px(2.),
+                                bottom: Val::Px(2.),
+                                right: Val::Px(2.),
+                            },
+                            ..default()
+                        },
+                        background_color: Color::WHITE.into(),
+                        ..default()
+                    },
+                    ActionButton::Settings,
+                ))
+                .with_children(|parent| {
+                    parent.spawn((
+                        TextBundle::from_section(
+                            "Settings",
+                            TextStyle {
+                                font: asset_server.load("fonts/FiraSans-Bold.ttf"),
+                                font_size: 40.0,
+                                color: OLIVE_GREEN,
+                            },
+                        ),
+                        ActionButton::Settings,
+                    ));
+                });
+        })
         // Spawn How To Play Button
         .with_children(|parent| {
             parent
@@ -273,6 +313,7 @@ pub fn interact_menu(
                     ActionButton::HowToPlay => next_state.set(AppState::HowToPlay),
                     ActionButton::Play => next_state.set(AppState::StartRound),
                     ActionButton::Leaderboard => next_state.set(AppState::Leaderboard),
+                    ActionButton::Settings => next_state.set(AppState::Settings),
                     ActionButton::Quit => next_state.set(AppState::QuitGame),
                 }
             }

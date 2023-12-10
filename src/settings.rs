@@ -9,7 +9,7 @@ pub enum BackButton {
 
 pub fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
     // Spawn Title Text
-    let title = format!("Leaderboard");
+    let title = format!("Settings");
     let font = asset_server.load("fonts/FiraSans-Bold.ttf");
     commands.spawn({
         TextBundle {
@@ -24,7 +24,7 @@ pub fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
             .with_alignment(TextAlignment::Center),
             style: Style {
                 top: Val::Percent(10.0),
-                left: Val::Percent(38.0),
+                left: Val::Percent(42.0),
 
                 ..default()
             },
@@ -116,6 +116,18 @@ pub fn interact_button(
             }
         }
     }
+}
+
+pub fn spawn_chibi(mut commands: Commands, asset_server: Res<AssetServer>) {
+    commands.spawn(SpriteBundle {
+        texture: asset_server.load("characters/baker.png"),
+        transform: Transform::from_xyz(0.0, -200.0, 0.0).with_scale(Vec3 {
+            x: 3.0,
+            y: 3.0,
+            z: 1.0,
+        }),
+        ..default()
+    });
 }
 
 pub fn clear_shapes(

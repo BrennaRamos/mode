@@ -78,10 +78,10 @@ pub fn play_game(
     let mut rng = rand::thread_rng();
 
     // Spawn Level Text
-    let title = format!("Level {} - Which color has more tallies?", game_data.level);
+    let title = format!("Level {}", game_data.level);
     let font = asset_server.load("fonts/FiraSans-Bold.ttf");
     commands.spawn({
-        Text2dBundle {
+        TextBundle {
             text: Text::from_section(
                 title,
                 TextStyle {
@@ -91,7 +91,12 @@ pub fn play_game(
                 },
             )
             .with_alignment(TextAlignment::Center),
-            transform: Transform::from_translation(Vec3::new(0.0, 60.0, 0.0)),
+            style: Style {
+                top: Val::Percent(10.0),
+                left: Val::Percent(42.0),
+
+                ..default()
+            },
             ..default()
         }
     });
@@ -142,28 +147,6 @@ fn print_shapes(
     offset: i32,
 ) -> AnswerButton {
     if random % 2 == 0 {
-        //for _iter in 0..1 {
-        //let font = asset_server.load("fonts/FiraSans-Bold.ttf");
-        // Spawn Sprite 1
-        // commands.spawn({
-        //     Text2dBundle {
-        //         text: Text::from_section(
-        //             "X",
-        //             TextStyle {
-        //                 font,
-        //                 font_size: 36.0,
-        //                 color: Color::TEAL,
-        //             },
-        //         )
-        //         .with_alignment(TextAlignment::Center),
-        //         transform: Transform::from_translation(Vec3::new(
-        //             -200.0 + (offset * 20) as f32,
-        //             0.0,
-        //             0.0,
-        //         )),
-        //         ..default()
-        //     }
-        // });
         commands.spawn((
             SpriteBundle {
                 texture: asset_server.load("icons/apple.png"),
@@ -179,28 +162,6 @@ fn print_shapes(
         //}
         return AnswerButton::X;
     } else {
-        //for _iter in 0..print_amt {
-        // let font = asset_server.load("fonts/FiraSans-Bold.ttf");
-        // Spawn Sprite 2
-        // commands.spawn({
-        //     Text2dBundle {
-        //         text: Text::from_section(
-        //             "O",
-        //             TextStyle {
-        //                 font,
-        //                 font_size: 36.0,
-        //                 color: Color::GOLD,
-        //             },
-        //         )
-        //         .with_alignment(TextAlignment::Center),
-        //         transform: Transform::from_translation(Vec3::new(
-        //             -200.0 + (offset * 20) as f32,
-        //             0.0,
-        //             0.0,
-        //         )),
-        //         ..default()
-        //     }
-        // });
         commands.spawn((
             SpriteBundle {
                 texture: asset_server.load("icons/pear.png"),
@@ -230,7 +191,7 @@ fn process_guess(
     if guess.trim() == "x" && exes > os {
         // Spawn Correct
         commands.spawn({
-            Text2dBundle {
+            TextBundle {
                 text: Text::from_section(
                     "Correct!",
                     TextStyle {
@@ -240,7 +201,12 @@ fn process_guess(
                     },
                 )
                 .with_alignment(TextAlignment::Center),
-                transform: Transform::from_translation(Vec3::new(0.0, -200.0, 0.0)),
+                style: Style {
+                    top: Val::Percent(70.0),
+                    left: Val::Percent(43.0),
+
+                    ..default()
+                },
                 ..default()
             }
         });
@@ -249,7 +215,7 @@ fn process_guess(
     } else if guess.trim() == "o" && os > exes {
         // Spawn Correct
         commands.spawn({
-            Text2dBundle {
+            TextBundle {
                 text: Text::from_section(
                     "Correct!",
                     TextStyle {
@@ -259,7 +225,12 @@ fn process_guess(
                     },
                 )
                 .with_alignment(TextAlignment::Center),
-                transform: Transform::from_translation(Vec3::new(0.0, -200.0, 0.0)),
+                style: Style {
+                    top: Val::Percent(70.0),
+                    left: Val::Percent(43.0),
+
+                    ..default()
+                },
                 ..default()
             }
         });
@@ -268,9 +239,30 @@ fn process_guess(
     } else {
         //Spawn Incorrect
         commands.spawn({
-            Text2dBundle {
+            TextBundle {
                 text: Text::from_section(
                     "Incorrect!",
+                    TextStyle {
+                        font: font.clone(),
+                        font_size: 48.0,
+                        color: Color::RED,
+                    },
+                )
+                .with_alignment(TextAlignment::Center),
+                style: Style {
+                    top: Val::Percent(70.0),
+                    left: Val::Percent(42.0),
+
+                    ..default()
+                },
+                ..default()
+            }
+        });
+        //Spawn Tally of Fruits
+        commands.spawn({
+            TextBundle {
+                text: Text::from_section(
+                    "Tally of Fruits",
                     TextStyle {
                         font,
                         font_size: 48.0,
@@ -278,7 +270,12 @@ fn process_guess(
                     },
                 )
                 .with_alignment(TextAlignment::Center),
-                transform: Transform::from_translation(Vec3::new(0.0, -200.0, 0.0)),
+                style: Style {
+                    top: Val::Percent(80.0),
+                    left: Val::Percent(42.0),
+
+                    ..default()
+                },
                 ..default()
             }
         });
@@ -333,10 +330,8 @@ pub fn setup_ui(commands: &mut Commands, asset_server: &Res<AssetServer>) {
                                 texture: asset_server.load("icons/apple.png"),
                                 ..default()
                             },
-                            // transform: Transform::from_translation(Vec3::new(0.0, 0.0, 2.0)),
                             ..default()
                         },
-                        FruitType::Apple,
                         AnswerButton::X,
                     ));
                 });
@@ -373,21 +368,19 @@ pub fn setup_ui(commands: &mut Commands, asset_server: &Res<AssetServer>) {
                             },
                             ..default()
                         },
-                        background_color: Color::GOLD.into(),
                         ..default()
                     },
                     AnswerButton::O,
                 ))
                 .with_children(|parent| {
                     parent.spawn((
-                        TextBundle::from_section(
-                            "O",
-                            TextStyle {
-                                font: asset_server.load("fonts/FiraSans-Bold.ttf"),
-                                font_size: 40.0,
-                                color: Color::WHITE,
+                        ImageBundle {
+                            image: UiImage {
+                                texture: asset_server.load("icons/pear.png"),
+                                ..default()
                             },
-                        ),
+                            ..default()
+                        },
                         AnswerButton::O,
                     ));
                 });

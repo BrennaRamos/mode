@@ -3,9 +3,8 @@ mod game_mod;
 mod how_to_play;
 mod leaderboard;
 mod main_menu;
+mod settings;
 use game_mod::*;
-use how_to_play::*;
-use leaderboard::*;
 use main_menu::*;
 
 fn main() {
@@ -39,8 +38,11 @@ fn main() {
         )
         .add_systems(
             Update,
-            (leaderboard::interact_button, leaderboard::spawn_chibi)
-                .run_if(in_state(AppState::Leaderboard)),
+            leaderboard::interact_button.run_if(in_state(AppState::Leaderboard)),
+        )
+        .add_systems(
+            Update,
+            (settings::interact_button, settings::spawn_chibi).run_if(in_state(AppState::Settings)),
         )
         .add_systems(
             Update,
@@ -58,6 +60,7 @@ fn main() {
         })
         .add_systems(OnEnter(AppState::MainMenu), main_menu::setup_menu)
         .add_systems(OnEnter(AppState::Leaderboard), leaderboard::setup_ui)
+        .add_systems(OnEnter(AppState::Settings), settings::setup_ui)
         .add_systems(OnEnter(AppState::HowToPlay), how_to_play::setup_ui)
         .add_systems(
             Update,
@@ -66,6 +69,7 @@ fn main() {
         .add_systems(OnExit(AppState::MainMenu), main_menu::clear_shapes)
         .add_systems(OnExit(AppState::HowToPlay), how_to_play::clear_shapes)
         .add_systems(OnExit(AppState::Leaderboard), leaderboard::clear_shapes)
+        .add_systems(OnExit(AppState::Settings), settings::clear_shapes)
         .run();
 }
 
@@ -89,4 +93,5 @@ pub enum AppState {
     QuitGame,
     Leaderboard,
     HowToPlay,
+    Settings,
 }
