@@ -10,7 +10,7 @@ use main_menu::*;
 
 fn main() {
     App::new()
-        .add_plugins(DefaultPlugins)
+        .add_plugins(DefaultPlugins.set(ImagePlugin::default_nearest()))
         .init_resource::<GameData>()
         .init_resource::<PlayerData>()
         .add_systems(Startup, startup)
@@ -28,6 +28,15 @@ fn main() {
         .add_systems(
             Update,
             main_menu::interact_menu.run_if(in_state(AppState::MainMenu)),
+        )
+        .add_systems(
+            Update,
+            how_to_play::interact_button.run_if(in_state(AppState::HowToPlay)),
+        )
+        .add_systems(
+            Update,
+            (leaderboard::interact_button, main_menu::spawn_chibi)
+                .run_if(in_state(AppState::Leaderboard)),
         )
         .add_systems(
             Update,
@@ -51,6 +60,8 @@ fn main() {
             (main_menu::animate_menu_title).run_if(in_state(AppState::MainMenu)),
         )
         .add_systems(OnExit(AppState::MainMenu), main_menu::clear_shapes)
+        .add_systems(OnExit(AppState::HowToPlay), how_to_play::clear_shapes)
+        .add_systems(OnExit(AppState::Leaderboard), leaderboard::clear_shapes)
         .run();
 }
 

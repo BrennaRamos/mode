@@ -2,6 +2,8 @@ use crate::{game_mod, AppState};
 use bevy::render::color::*;
 use bevy::{core_pipeline::clear_color::ClearColorConfig, prelude::*};
 
+const OLIVE_GREEN: Color = Color::rgb(82.0 / 255.0, 88.0 / 255.0, 32.0 / 255.0);
+
 #[derive(Component)]
 pub enum ActionButton {
     Play,
@@ -102,7 +104,7 @@ pub fn setup_menu(
                             TextStyle {
                                 font: asset_server.load("fonts/FiraSans-Bold.ttf"),
                                 font_size: 40.0,
-                                color: Color::rgb(82.0 / 255.0, 88.0 / 255.0, 32.0 / 255.0),
+                                color: OLIVE_GREEN,
                             },
                         ),
                         ActionButton::Play,
@@ -141,7 +143,7 @@ pub fn setup_menu(
                             TextStyle {
                                 font: asset_server.load("fonts/FiraSans-Bold.ttf"),
                                 font_size: 40.0,
-                                color: Color::rgb(82.0 / 255.0, 88.0 / 255.0, 32.0 / 255.0),
+                                color: OLIVE_GREEN,
                             },
                         ),
                         ActionButton::Leaderboard,
@@ -180,7 +182,7 @@ pub fn setup_menu(
                             TextStyle {
                                 font: asset_server.load("fonts/FiraSans-Bold.ttf"),
                                 font_size: 40.0,
-                                color: Color::rgb(82.0 / 255.0, 88.0 / 255.0, 32.0 / 255.0),
+                                color: OLIVE_GREEN,
                             },
                         ),
                         ActionButton::HowToPlay,
@@ -218,7 +220,7 @@ pub fn setup_menu(
                             TextStyle {
                                 font: asset_server.load("fonts/FiraSans-Bold.ttf"),
                                 font_size: 40.0,
-                                color: Color::rgb(82.0 / 255.0, 88.0 / 255.0, 32.0 / 255.0),
+                                color: OLIVE_GREEN,
                             },
                         ),
                         ActionButton::Quit,
@@ -278,7 +280,7 @@ pub fn interact_menu(
                 *border_color = Color::SALMON.into();
             }
             Interaction::None => {
-                *border_color = Color::rgb(82.0 / 255.0, 88.0 / 255.0, 32.0 / 255.0).into();
+                *border_color = OLIVE_GREEN.into();
             }
         }
     }
