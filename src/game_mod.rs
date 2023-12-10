@@ -1,8 +1,9 @@
 use bevy::prelude::*;
+use chrono::format::format;
 use rand::Rng;
 use std::time::Duration;
 
-use crate::{main_menu::OLIVE_GREEN, AppState};
+use crate::{main_menu::OLIVE_GREEN, settings::GameSettings, AppState};
 
 #[derive(Resource)]
 pub struct GameData {
@@ -14,11 +15,12 @@ pub struct GameData {
     time_elapsed: Duration,
 }
 
-#[derive(Component)]
+#[derive(Component, Clone, Debug, PartialEq)]
 pub enum FruitType {
     Apple,
     Pear,
     Orange,
+    Strawberry,
 }
 
 impl Default for GameData {
@@ -70,6 +72,7 @@ pub fn play_game(
     asset_server: Res<AssetServer>,
     mut next_state: ResMut<NextState<AppState>>,
     mut game_data: ResMut<GameData>,
+    game_settings: Res<GameSettings>,
 ) {
     game_data.player_guess.clear();
     game_data.time_elapsed = Duration::new(0, 0);
@@ -104,12 +107,13 @@ pub fn play_game(
     let mut counter = 0;
 
     for _iter in 3..rng.gen_range(4..20) {
-        let shape = print_shapes(
+        let shape = print_fruits(
             rng.gen_range(1..11),
             //rng.gen_range(0..10),
             &asset_server,
             &mut commands,
             _iter,
+            &game_settings,
         );
 
         match shape {
@@ -121,12 +125,13 @@ pub fn play_game(
 
     // To get rid of cases where there are equal amounts of either shape
     if game_data.exes == game_data.os {
-        let shape = print_shapes(
+        let shape = print_fruits(
             rng.gen_range(1..11),
             //rng.gen_range(0..10),
             &asset_server,
             &mut commands,
             counter,
+            &game_settings,
         );
 
         match shape {
@@ -139,40 +144,43 @@ pub fn play_game(
     next_state.set(AppState::Pause);
 }
 
-fn print_shapes(
+fn print_fruits(
     random: i32,
     //print_amt: i32,
     asset_server: &Res<AssetServer>,
     commands: &mut Commands,
     offset: i32,
+    game_settings: &Res<GameSettings>,
 ) -> AnswerButton {
     if random % 2 == 0 {
+        let fruit_file_a = format!("icons/{:?}.png", game_settings.fruit_a).to_lowercase();
         commands.spawn((
             SpriteBundle {
-                texture: asset_server.load("icons/apple.png"),
+                texture: asset_server.load(fruit_file_a),
                 transform: Transform::from_translation(Vec3::new(
-                    -200.0 + (offset * 50) as f32,
+                    -500.0 + (offset * 50) as f32,
                     0.0,
                     0.0,
                 )),
                 ..default()
             },
-            FruitType::Apple,
+            game_settings.fruit_a.clone(),
         ));
         //}
         return AnswerButton::X;
     } else {
+        let fruit_file_b = format!("icons/{:?}.png", game_settings.fruit_b).to_lowercase();
         commands.spawn((
             SpriteBundle {
-                texture: asset_server.load("icons/pear.png"),
+                texture: asset_server.load(fruit_file_b),
                 transform: Transform::from_translation(Vec3::new(
-                    -200.0 + (offset * 50) as f32,
+                    -500.0 + (offset * 50) as f32,
                     0.0,
                     0.0,
                 )),
                 ..default()
             },
-            FruitType::Pear,
+            game_settings.fruit_b.clone(),
         ));
         //}
         return AnswerButton::O;
@@ -258,48 +266,52 @@ fn process_guess(
                 ..default()
             }
         });
-        //Spawn Tally of Fruits
-        commands.spawn({
-            TextBundle {
-                text: Text::from_section(
-                    "Tally of Fruits",
-                    TextStyle {
-                        font,
-                        font_size: 48.0,
-                        color: Color::RED,
-                    },
-                )
-                .with_alignment(TextAlignment::Center),
-                style: Style {
-                    top: Val::Percent(80.0),
-                    left: Val::Percent(42.0),
+        // //Spawn Tally of Fruits
+        // let tally_fruits = format!("Fruit A: {} vs Fruit B:{}", exes, os);
+        // commands.spawn({
+        //     TextBundle {
+        //         text: Text::from_section(
+        //             tally_fruits,
+        //             TextStyle {
+        //                 font,
+        //                 font_size: 48.0,
+        //                 color: Color::SALMON,
+        //             },
+        //         )
+        //         .with_alignment(TextAlignment::Center),
+        //         style: Style {
+        //             top: Val::Percent(80.0),
+        //             left: Val::Percent(36.0),
 
-                    ..default()
-                },
-                ..default()
-            }
-        });
+        //             ..default()
+        //         },
+        //         ..default()
+        //     }
+        // });
         game_data.result = Result::Incorrect;
         return false;
     }
 }
 
-pub fn setup_ui(commands: &mut Commands, asset_server: &Res<AssetServer>) {
+pub fn setup_ui(
+    commands: &mut Commands,
+    asset_server: &Res<AssetServer>,
+    game_settings: &Res<GameSettings>,
+) {
+    let fruit_file_a = format!("icons/{:?}.png", game_settings.fruit_a).to_lowercase();
+    let fruit_file_b = format!("icons/{:?}.png", game_settings.fruit_b).to_lowercase();
     commands
-        .spawn((
-            NodeBundle {
-                style: Style {
-                    // bottom left button
-                    width: Val::Percent(100.),
-                    height: Val::Percent(100.),
-                    justify_content: JustifyContent::Start,
-                    align_items: AlignItems::End,
-                    ..default()
-                },
+        .spawn((NodeBundle {
+            style: Style {
+                // bottom left button
+                width: Val::Percent(100.),
+                height: Val::Percent(100.),
+                justify_content: JustifyContent::Start,
+                align_items: AlignItems::End,
                 ..default()
             },
-            AnswerButton::X,
-        ))
+            ..default()
+        },))
         .with_children(|parent| {
             parent
                 .spawn((
@@ -321,24 +333,26 @@ pub fn setup_ui(commands: &mut Commands, asset_server: &Res<AssetServer>) {
                         },
                         ..default()
                     },
+                    game_settings.fruit_a.clone(),
                     AnswerButton::X,
                 ))
                 .with_children(|parent| {
                     parent.spawn((
                         ImageBundle {
                             image: UiImage {
-                                texture: asset_server.load("icons/apple.png"),
+                                texture: asset_server.load(fruit_file_a),
                                 ..default()
                             },
                             ..default()
                         },
+                        game_settings.fruit_a.clone(),
                         AnswerButton::X,
                     ));
                 });
         });
 
     commands
-        .spawn(NodeBundle {
+        .spawn((NodeBundle {
             style: Style {
                 // bottom right button
                 width: Val::Percent(100.),
@@ -348,7 +362,7 @@ pub fn setup_ui(commands: &mut Commands, asset_server: &Res<AssetServer>) {
                 ..default()
             },
             ..default()
-        })
+        },))
         .with_children(|parent| {
             parent
                 .spawn((
@@ -370,17 +384,19 @@ pub fn setup_ui(commands: &mut Commands, asset_server: &Res<AssetServer>) {
                         },
                         ..default()
                     },
+                    game_settings.fruit_b.clone(),
                     AnswerButton::O,
                 ))
                 .with_children(|parent| {
                     parent.spawn((
                         ImageBundle {
                             image: UiImage {
-                                texture: asset_server.load("icons/pear.png"),
+                                texture: asset_server.load(fruit_file_b),
                                 ..default()
                             },
                             ..default()
                         },
+                        game_settings.fruit_b.clone(),
                         AnswerButton::O,
                     ));
                 });

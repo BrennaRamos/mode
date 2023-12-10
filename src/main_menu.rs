@@ -1,3 +1,4 @@
+use crate::settings::GameSettings;
 use crate::{game_mod, AppState};
 use bevy::render::color::*;
 use bevy::{core_pipeline::clear_color::ClearColorConfig, prelude::*};
@@ -333,6 +334,7 @@ pub fn clear_shapes(
     mut query_title: Query<Entity, With<AnimationTimer>>,
     current_state: Res<State<AppState>>,
     asset_server: Res<AssetServer>,
+    game_settings: Res<GameSettings>,
 ) {
     for entity in query.iter_mut() {
         if let Some(entity) = commands.get_entity(entity) {
@@ -347,7 +349,7 @@ pub fn clear_shapes(
 
     match current_state.get() {
         AppState::StartRound => {
-            game_mod::setup_ui(&mut commands, &asset_server);
+            game_mod::setup_ui(&mut commands, &asset_server, &game_settings);
         }
         _ => {}
     }

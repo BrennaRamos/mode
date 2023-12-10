@@ -6,12 +6,14 @@ mod main_menu;
 mod settings;
 use game_mod::*;
 use main_menu::*;
+use settings::*;
 
 fn main() {
     App::new()
         .insert_resource(AssetMetaCheck::Never)
         .add_plugins(DefaultPlugins.set(ImagePlugin::default_nearest()))
         .init_resource::<GameData>()
+        .init_resource::<GameSettings>()
         .init_resource::<PlayerData>()
         .add_systems(Startup, startup)
         .add_state::<AppState>()
@@ -42,7 +44,16 @@ fn main() {
         )
         .add_systems(
             Update,
-            (settings::interact_button, settings::spawn_chibi).run_if(in_state(AppState::Settings)),
+            settings::interact_button.run_if(in_state(AppState::Settings)),
+        )
+        .add_systems(
+            Update,
+            (
+                settings::interact_button,
+                settings::set_fruits,
+                settings::hover_fruit,
+            )
+                .run_if(in_state(AppState::Settings)),
         )
         .add_systems(
             Update,
@@ -60,7 +71,14 @@ fn main() {
         })
         .add_systems(OnEnter(AppState::MainMenu), main_menu::setup_menu)
         .add_systems(OnEnter(AppState::Leaderboard), leaderboard::setup_ui)
-        .add_systems(OnEnter(AppState::Settings), settings::setup_ui)
+        .add_systems(
+            OnEnter(AppState::Settings),
+            (
+                settings::setup_ui,
+                settings::spawn_chibi,
+                settings::spawn_fruit,
+            ),
+        )
         .add_systems(OnEnter(AppState::HowToPlay), how_to_play::setup_ui)
         .add_systems(
             Update,
