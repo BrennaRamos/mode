@@ -1,4 +1,4 @@
-use bevy::prelude::*;
+use bevy::{asset::AssetMetaCheck, prelude::*};
 mod game_mod;
 mod how_to_play;
 mod leaderboard;
@@ -10,6 +10,7 @@ use main_menu::*;
 
 fn main() {
     App::new()
+        .insert_resource(AssetMetaCheck::Never)
         .add_plugins(DefaultPlugins.set(ImagePlugin::default_nearest()))
         .init_resource::<GameData>()
         .init_resource::<PlayerData>()

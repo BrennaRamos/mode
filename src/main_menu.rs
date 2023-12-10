@@ -41,7 +41,7 @@ pub fn setup_menu(
         ..default()
     });
     // Spawn Menu Title
-    let texture_handle = asset_server.load("Icons/Title.png");
+    let texture_handle = asset_server.load("icons/Title.png");
     let texture_atlas =
         TextureAtlas::from_grid(texture_handle, Vec2::new(960.0, 540.0), 6, 1, None, None);
     let texture_atlas_handle = texture_atlases.add(texture_atlas);
@@ -188,45 +188,45 @@ pub fn setup_menu(
                         ActionButton::HowToPlay,
                     ));
                 });
-        })
-        .with_children(|parent| {
-            parent
-                .spawn((
-                    ButtonBundle {
-                        style: Style {
-                            width: Val::Px(150.),
-                            height: Val::Px(65.),
-                            // horizontally center child text
-                            justify_content: JustifyContent::Center,
-                            // vertically center child text
-                            align_items: AlignItems::Center,
-                            border: UiRect {
-                                top: Val::Px(2.),
-                                left: Val::Px(2.),
-                                bottom: Val::Px(2.),
-                                right: Val::Px(2.),
-                            },
-                            ..default()
-                        },
-                        background_color: Color::WHITE.into(),
-                        ..default()
-                    },
-                    ActionButton::Quit,
-                ))
-                .with_children(|parent| {
-                    parent.spawn((
-                        TextBundle::from_section(
-                            "Quit",
-                            TextStyle {
-                                font: asset_server.load("fonts/FiraSans-Bold.ttf"),
-                                font_size: 40.0,
-                                color: OLIVE_GREEN,
-                            },
-                        ),
-                        ActionButton::Quit,
-                    ));
-                });
         });
+    // .with_children(|parent| {
+    //     parent
+    //         .spawn((
+    //             ButtonBundle {
+    //                 style: Style {
+    //                     width: Val::Px(150.),
+    //                     height: Val::Px(65.),
+    //                     // horizontally center child text
+    //                     justify_content: JustifyContent::Center,
+    //                     // vertically center child text
+    //                     align_items: AlignItems::Center,
+    //                     border: UiRect {
+    //                         top: Val::Px(2.),
+    //                         left: Val::Px(2.),
+    //                         bottom: Val::Px(2.),
+    //                         right: Val::Px(2.),
+    //                     },
+    //                     ..default()
+    //                 },
+    //                 background_color: Color::WHITE.into(),
+    //                 ..default()
+    //             },
+    //             ActionButton::Quit,
+    //         ))
+    //         .with_children(|parent| {
+    //             parent.spawn((
+    //                 TextBundle::from_section(
+    //                     "Quit",
+    //                     TextStyle {
+    //                         font: asset_server.load("fonts/FiraSans-Bold.ttf"),
+    //                         font_size: 40.0,
+    //                         color: OLIVE_GREEN,
+    //                     },
+    //                 ),
+    //                 ActionButton::Quit,
+    //             ));
+    //         });
+    // });
 }
 
 pub fn animate_menu_title(
@@ -257,9 +257,9 @@ pub fn interact_menu(
     mut next_state: ResMut<NextState<AppState>>,
     keyboard_input: Res<Input<KeyCode>>,
 ) {
-    if keyboard_input.just_released(KeyCode::Escape) {
-        next_state.set(AppState::QuitGame);
-    }
+    // if keyboard_input.just_released(KeyCode::Escape) {
+    //     next_state.set(AppState::QuitGame);
+    // }
 
     if keyboard_input.just_released(KeyCode::Return) {
         next_state.set(AppState::StartRound);

@@ -14,6 +14,13 @@ pub struct GameData {
     time_elapsed: Duration,
 }
 
+#[derive(Component)]
+pub enum FruitType {
+    Apple,
+    Pear,
+    Orange,
+}
+
 impl Default for GameData {
     fn default() -> Self {
         Self {
@@ -65,7 +72,6 @@ pub fn play_game(
     mut game_data: ResMut<GameData>,
 ) {
     game_data.player_guess.clear();
-    game_data.level = 1;
     game_data.time_elapsed = Duration::new(0, 0);
     game_data.exes = 0;
     game_data.os = 0;
@@ -137,52 +143,76 @@ fn print_shapes(
 ) -> AnswerButton {
     if random % 2 == 0 {
         //for _iter in 0..1 {
-        let font = asset_server.load("fonts/FiraSans-Bold.ttf");
+        //let font = asset_server.load("fonts/FiraSans-Bold.ttf");
         // Spawn Sprite 1
-        commands.spawn({
-            Text2dBundle {
-                text: Text::from_section(
-                    "X",
-                    TextStyle {
-                        font,
-                        font_size: 36.0,
-                        color: Color::TEAL,
-                    },
-                )
-                .with_alignment(TextAlignment::Center),
+        // commands.spawn({
+        //     Text2dBundle {
+        //         text: Text::from_section(
+        //             "X",
+        //             TextStyle {
+        //                 font,
+        //                 font_size: 36.0,
+        //                 color: Color::TEAL,
+        //             },
+        //         )
+        //         .with_alignment(TextAlignment::Center),
+        //         transform: Transform::from_translation(Vec3::new(
+        //             -200.0 + (offset * 20) as f32,
+        //             0.0,
+        //             0.0,
+        //         )),
+        //         ..default()
+        //     }
+        // });
+        commands.spawn((
+            SpriteBundle {
+                texture: asset_server.load("icons/apple.png"),
                 transform: Transform::from_translation(Vec3::new(
-                    -200.0 + (offset * 20) as f32,
+                    -200.0 + (offset * 50) as f32,
                     0.0,
                     0.0,
                 )),
                 ..default()
-            }
-        });
+            },
+            FruitType::Apple,
+        ));
         //}
         return AnswerButton::X;
     } else {
         //for _iter in 0..print_amt {
-        let font = asset_server.load("fonts/FiraSans-Bold.ttf");
+        // let font = asset_server.load("fonts/FiraSans-Bold.ttf");
         // Spawn Sprite 2
-        commands.spawn({
-            Text2dBundle {
-                text: Text::from_section(
-                    "O",
-                    TextStyle {
-                        font,
-                        font_size: 36.0,
-                        color: Color::GOLD,
-                    },
-                )
-                .with_alignment(TextAlignment::Center),
+        // commands.spawn({
+        //     Text2dBundle {
+        //         text: Text::from_section(
+        //             "O",
+        //             TextStyle {
+        //                 font,
+        //                 font_size: 36.0,
+        //                 color: Color::GOLD,
+        //             },
+        //         )
+        //         .with_alignment(TextAlignment::Center),
+        //         transform: Transform::from_translation(Vec3::new(
+        //             -200.0 + (offset * 20) as f32,
+        //             0.0,
+        //             0.0,
+        //         )),
+        //         ..default()
+        //     }
+        // });
+        commands.spawn((
+            SpriteBundle {
+                texture: asset_server.load("icons/pear.png"),
                 transform: Transform::from_translation(Vec3::new(
-                    -200.0 + (offset * 20) as f32,
+                    -200.0 + (offset * 50) as f32,
                     0.0,
                     0.0,
                 )),
                 ..default()
-            }
-        });
+            },
+            FruitType::Pear,
+        ));
         //}
         return AnswerButton::O;
     }
@@ -292,21 +322,21 @@ pub fn setup_ui(commands: &mut Commands, asset_server: &Res<AssetServer>) {
                             },
                             ..default()
                         },
-                        background_color: Color::TEAL.into(),
                         ..default()
                     },
                     AnswerButton::X,
                 ))
                 .with_children(|parent| {
                     parent.spawn((
-                        TextBundle::from_section(
-                            "X",
-                            TextStyle {
-                                font: asset_server.load("fonts/FiraSans-Bold.ttf"),
-                                font_size: 40.0,
-                                color: Color::WHITE,
+                        ImageBundle {
+                            image: UiImage {
+                                texture: asset_server.load("icons/apple.png"),
+                                ..default()
                             },
-                        ),
+                            // transform: Transform::from_translation(Vec3::new(0.0, 0.0, 2.0)),
+                            ..default()
+                        },
+                        FruitType::Apple,
                         AnswerButton::X,
                     ));
                 });
@@ -377,7 +407,7 @@ pub fn interact_button(
     mut timer: ResMut<PauseTimer>,
 ) {
     // Keyboard Input
-    if keyboard_input.just_released(KeyCode::A) {
+    if keyboard_input.just_released(KeyCode::Z) {
         game_data.player_guess = "x".to_string();
         timer.pause_timer.pause();
         process_guess(
@@ -391,7 +421,7 @@ pub fn interact_button(
         next_state.set(AppState::ShowResults);
     }
 
-    if keyboard_input.just_released(KeyCode::D) {
+    if keyboard_input.just_released(KeyCode::X) {
         game_data.player_guess = "o".to_string();
         timer.pause_timer.pause();
         process_guess(
@@ -425,7 +455,7 @@ pub fn interact_button(
                 next_state.set(AppState::ShowResults);
             }
             Interaction::Hovered => {
-                *border_color = Color::BLACK.into();
+                *border_color = Color::SALMON.into();
             }
             Interaction::None => {
                 *border_color = Color::rgb(82.0 / 255.0, 88.0 / 255.0, 32.0 / 255.0).into();
@@ -438,7 +468,7 @@ pub fn show_results(
     time: Res<Time>,
     mut timer: ResMut<ResultTimer>,
     mut next_state: ResMut<NextState<AppState>>,
-    game_data: ResMut<GameData>,
+    mut game_data: ResMut<GameData>,
 ) {
     timer.result_timer.tick(time.delta());
     if timer.result_timer.finished() {
@@ -449,6 +479,7 @@ pub fn show_results(
             }
             Result::Incorrect => {
                 next_state.set(AppState::GameOver);
+                game_data.level = 1;
                 timer.result_timer.reset();
             }
         }
@@ -470,6 +501,7 @@ pub fn pause(
     if timer.pause_timer.finished() {
         if game_data.player_guess.is_empty() {
             next_state.set(AppState::GameOver);
+            timer.pause_timer.reset();
         }
     }
     if timer.pause_timer.paused() {
@@ -493,9 +525,16 @@ pub fn upload_score(game_data: ResMut<GameData>, mut player_data: ResMut<PlayerD
 
 pub fn clear_shapes(
     mut commands: Commands,
-    mut query: Query<Entity, (With<Text>, Without<AnswerButton>)>,
+    mut query_text: Query<Entity, (With<Text>, Without<AnswerButton>)>,
+    mut query_fruit: Query<Entity, (With<FruitType>, Without<Node>)>,
 ) {
-    for entity in query.iter_mut() {
+    for entity in query_text.iter_mut() {
+        if let Some(entity) = commands.get_entity(entity) {
+            entity.despawn_recursive();
+        }
+    }
+
+    for entity in query_fruit.iter_mut() {
         if let Some(entity) = commands.get_entity(entity) {
             entity.despawn_recursive();
         }
@@ -506,6 +545,7 @@ pub fn game_over(
     mut commands: Commands,
     mut query_text: Query<Entity, With<Text>>,
     mut query_button: Query<Entity, With<Style>>,
+    mut query_fruit: Query<Entity, With<FruitType>>,
     mut next_state: ResMut<NextState<AppState>>,
 ) {
     for entity in query_text.iter_mut() {
@@ -514,6 +554,12 @@ pub fn game_over(
         }
     }
     for entity in query_button.iter_mut() {
+        if let Some(entity) = commands.get_entity(entity) {
+            entity.despawn_recursive();
+        }
+    }
+
+    for entity in query_fruit.iter_mut() {
         if let Some(entity) = commands.get_entity(entity) {
             entity.despawn_recursive();
         }
