@@ -59,6 +59,29 @@ pub fn setup_menu(
         animation_indices,
         AnimationTimer(Timer::from_seconds(0.5, TimerMode::Repeating)),
     ));
+    // let title = format!("Odemay");
+    // let font = asset_server.load("fonts/Leila-Regular.ttf");
+    // commands.spawn({
+    //     TextBundle {
+    //         text: Text::from_section(
+    //             title,
+    //             TextStyle {
+    //                 font,
+    //                 font_size: 64.0,
+    //                 color: OLIVE_GREEN,
+    //             },
+    //         )
+    //         .with_alignment(TextAlignment::Center),
+    //         style: Style {
+    //             position_type: PositionType::Relative,
+    //             top: Val::Percent(10.0),
+    //             left: Val::Percent(46.0),
+
+    //             ..default()
+    //         },
+    //         ..default()
+    //     }
+    // });
     // Spawn Menu Buttons
     commands
         .spawn((
@@ -69,6 +92,7 @@ pub fn setup_menu(
                     height: Val::Percent(100.),
                     justify_content: JustifyContent::SpaceEvenly,
                     align_items: AlignItems::Center,
+                    top: Val::Px(100.0),
                     ..default()
                 },
                 ..default()
@@ -104,7 +128,7 @@ pub fn setup_menu(
                         TextBundle::from_section(
                             "Play",
                             TextStyle {
-                                font: asset_server.load("fonts/FiraSans-Bold.ttf"),
+                                font: asset_server.load("fonts/Leila-Regular.ttf"),
                                 font_size: 40.0,
                                 color: OLIVE_GREEN,
                             },
@@ -143,7 +167,7 @@ pub fn setup_menu(
                         TextBundle::from_section(
                             "Leaderboard",
                             TextStyle {
-                                font: asset_server.load("fonts/FiraSans-Bold.ttf"),
+                                font: asset_server.load("fonts/Leila-Regular.ttf"),
                                 font_size: 40.0,
                                 color: OLIVE_GREEN,
                             },
@@ -182,7 +206,7 @@ pub fn setup_menu(
                         TextBundle::from_section(
                             "Settings",
                             TextStyle {
-                                font: asset_server.load("fonts/FiraSans-Bold.ttf"),
+                                font: asset_server.load("fonts/Leila-Regular.ttf"),
                                 font_size: 40.0,
                                 color: OLIVE_GREEN,
                             },
@@ -221,7 +245,7 @@ pub fn setup_menu(
                         TextBundle::from_section(
                             "How to Play",
                             TextStyle {
-                                font: asset_server.load("fonts/FiraSans-Bold.ttf"),
+                                font: asset_server.load("fonts/Leila-Regular.ttf"),
                                 font_size: 40.0,
                                 color: OLIVE_GREEN,
                             },
@@ -259,7 +283,7 @@ pub fn setup_menu(
     //                 TextBundle::from_section(
     //                     "Quit",
     //                     TextStyle {
-    //                         font: asset_server.load("fonts/FiraSans-Bold.ttf"),
+    //                         font: asset_server.load("fonts/Leila-Regular.ttf"),
     //                         font_size: 40.0,
     //                         color: OLIVE_GREEN,
     //                     },

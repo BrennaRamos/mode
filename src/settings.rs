@@ -34,7 +34,7 @@ impl Default for GameSettings {
 pub fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
     // Spawn Title Text
     let title = format!("Settings");
-    let font = asset_server.load("fonts/FiraSans-Bold.ttf");
+    let font = asset_server.load("fonts/Leila-Regular.ttf");
     commands.spawn({
         TextBundle {
             text: Text::from_section(
@@ -101,7 +101,7 @@ pub fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
                         TextBundle::from_section(
                             "Back",
                             TextStyle {
-                                font: asset_server.load("fonts/FiraSans-Bold.ttf"),
+                                font: asset_server.load("fonts/Leila-Regular.ttf"),
                                 font_size: 40.0,
                                 color: OLIVE_GREEN,
                             },
@@ -188,15 +188,10 @@ pub fn hover_fruit(
 }
 
 pub fn set_fruits(
-    mut commands: Commands,
     mut interaction_query: Query<&FruitType, (With<Button>, With<Hovered>)>,
     mouse_input: Res<Input<MouseButton>>,
     mut game_settings: ResMut<GameSettings>,
 ) {
-    println!(
-        "Fruits are {:?} and {:?}",
-        game_settings.fruit_a, game_settings.fruit_b
-    );
     if mouse_input.just_released(MouseButton::Left) {
         for fruit_type in interaction_query.iter_mut() {
             if fruit_type != &game_settings.fruit_b {
@@ -252,6 +247,9 @@ pub fn spawn_fruit(mut commands: Commands, asset_server: Res<AssetServer>) {
                             justify_content: JustifyContent::Center,
                             // vertically center child text
                             align_items: AlignItems::Center,
+                            // center the node vertically and horizontally within the window
+                            position_type: PositionType::Relative,
+                            left: Val::Px(100.0),
                             border: UiRect {
                                 top: Val::Px(2.),
                                 left: Val::Px(2.),
@@ -304,6 +302,9 @@ pub fn spawn_fruit(mut commands: Commands, asset_server: Res<AssetServer>) {
                             justify_content: JustifyContent::Center,
                             // vertically center child text
                             align_items: AlignItems::Center,
+                            // center the node vertically and horizontally within the window
+                            position_type: PositionType::Relative,
+                            left: Val::Px(100.0),
                             border: UiRect {
                                 top: Val::Px(2.),
                                 left: Val::Px(2.),
@@ -356,6 +357,9 @@ pub fn spawn_fruit(mut commands: Commands, asset_server: Res<AssetServer>) {
                             justify_content: JustifyContent::Center,
                             // vertically center child text
                             align_items: AlignItems::Center,
+                            // center the node vertically and horizontally within the window
+                            position_type: PositionType::Relative,
+                            left: Val::Px(100.0),
                             border: UiRect {
                                 top: Val::Px(2.),
                                 left: Val::Px(2.),
@@ -407,6 +411,9 @@ pub fn spawn_fruit(mut commands: Commands, asset_server: Res<AssetServer>) {
                             justify_content: JustifyContent::Center,
                             // vertically center child text
                             align_items: AlignItems::Center,
+                            // center the node vertically and horizontally within the window
+                            position_type: PositionType::Relative,
+                            left: Val::Px(100.0),
                             border: UiRect {
                                 top: Val::Px(2.),
                                 left: Val::Px(2.),

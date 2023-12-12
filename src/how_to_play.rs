@@ -10,7 +10,7 @@ pub enum BackButton {
 pub fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
     // Spawn Title Text
     let title = format!("How To Play");
-    let font = asset_server.load("fonts/FiraSans-Bold.ttf");
+    let font = asset_server.load("fonts/Leila-Regular.ttf");
     commands.spawn({
         TextBundle {
             text: Text::from_section(
@@ -36,7 +36,7 @@ pub fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
         "The village of Odemay is hungry! They need more fruit to survive the winter. 
     Could you lend a hand in picking the fruit that is more abundant?"
     );
-    let font = asset_server.load("fonts/FiraSans-Bold.ttf");
+    let font = asset_server.load("fonts/Leila-Regular.ttf");
     commands.spawn({
         TextBundle {
             text: Text::from_section(
@@ -44,13 +44,13 @@ pub fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
                 TextStyle {
                     font,
                     font_size: 32.0,
-                    color: OLIVE_GREEN,
+                    color: Color::SALMON,
                 },
             )
             .with_alignment(TextAlignment::Center),
             style: Style {
                 top: Val::Percent(40.0),
-                left: Val::Percent(15.0),
+                left: Val::Percent(5.0),
                 ..default()
             },
             ..default()
@@ -59,27 +59,27 @@ pub fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
 
     // Spawn Bullet Point Text
     let title = format!(
-        "    • Two types of fruit will spawn on the screen in different quantities
-    • Choose which fruit there is more of using the Z and X keys or the on-screen buttons
-    • Each level gives you five seconds to guess. Guess as quickly as you can for a better score!
-    • If you guess incorrectly, the game is over and you go back to the main menu
-    • Depending on your performance, you can unlock more characters for your village"
+        "    .:. Two types of fruit will spawn on the screen in different quantities .:.
+    .:. Choose which fruit there is more of using the Z and X keys or the on screen buttons .:.
+    .:. Each level gives you five seconds to guess. Guess as quickly as you can for a better score! .:.
+    .:. If you guess incorrectly, the game is over and you go back to the main menu .:.
+    .:. Depending on your performance, you can unlock more characters for your village .:."
     );
-    let font = asset_server.load("fonts/FiraSans-Bold.ttf");
+    let font = asset_server.load("fonts/Leila-Regular.ttf");
     commands.spawn({
         TextBundle {
             text: Text::from_section(
                 title,
                 TextStyle {
                     font,
-                    font_size: 32.0,
+                    font_size: 27.0,
                     color: OLIVE_GREEN,
                 },
             )
             .with_alignment(TextAlignment::Center),
             style: Style {
                 top: Val::Percent(55.0),
-                left: Val::Percent(5.0),
+                left: Val::Percent(0.0),
 
                 ..default()
             },
@@ -132,7 +132,7 @@ pub fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
                         TextBundle::from_section(
                             "Back",
                             TextStyle {
-                                font: asset_server.load("fonts/FiraSans-Bold.ttf"),
+                                font: asset_server.load("fonts/Leila-Regular.ttf"),
                                 font_size: 40.0,
                                 color: OLIVE_GREEN,
                             },

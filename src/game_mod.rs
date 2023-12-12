@@ -1,5 +1,4 @@
 use bevy::prelude::*;
-use chrono::format::format;
 use rand::Rng;
 use std::time::Duration;
 
@@ -13,6 +12,8 @@ pub struct GameData {
     result: Result,
     level: i32,
     time_elapsed: Duration,
+    fruit_array: Vec<FruitType>,
+    file_array: Vec<String>,
 }
 
 #[derive(Component, Clone, Debug, PartialEq)]
@@ -32,6 +33,8 @@ impl Default for GameData {
             result: Default::default(),
             level: 1,
             time_elapsed: Duration::new(0, 0),
+            file_array: Default::default(),
+            fruit_array: Default::default(),
         }
     }
 }
@@ -67,6 +70,11 @@ pub enum Result {
     Incorrect,
 }
 
+#[derive(Component)]
+pub enum GridIdentifier {
+    Grid,
+}
+
 pub fn play_game(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
@@ -74,6 +82,8 @@ pub fn play_game(
     mut game_data: ResMut<GameData>,
     game_settings: Res<GameSettings>,
 ) {
+    game_data.fruit_array.clear();
+    game_data.file_array.clear();
     game_data.player_guess.clear();
     game_data.time_elapsed = Duration::new(0, 0);
     game_data.exes = 0;
@@ -82,7 +92,7 @@ pub fn play_game(
 
     // Spawn Level Text
     let title = format!("Level {}", game_data.level);
-    let font = asset_server.load("fonts/FiraSans-Bold.ttf");
+    let font = asset_server.load("fonts/Leila-Regular.ttf");
     commands.spawn({
         TextBundle {
             text: Text::from_section(
@@ -95,8 +105,9 @@ pub fn play_game(
             )
             .with_alignment(TextAlignment::Center),
             style: Style {
+                position_type: PositionType::Relative,
                 top: Val::Percent(10.0),
-                left: Val::Percent(42.0),
+                left: Val::Percent(46.0),
 
                 ..default()
             },
@@ -104,87 +115,136 @@ pub fn play_game(
         }
     });
 
-    let mut counter = 0;
+    let fruit_file_a = format!("icons/{:?}.png", game_settings.fruit_a).to_lowercase();
+    let fruit_file_b = format!("icons/{:?}.png", game_settings.fruit_b).to_lowercase();
 
     for _iter in 3..rng.gen_range(4..20) {
-        let shape = print_fruits(
-            rng.gen_range(1..11),
-            //rng.gen_range(0..10),
-            &asset_server,
-            &mut commands,
-            _iter,
-            &game_settings,
-        );
+        let shape = choose_fruits(rng.gen_range(1..11));
 
         match shape {
-            AnswerButton::X => game_data.exes += 1,
-            AnswerButton::O => game_data.os += 1,
+            AnswerButton::X => {
+                game_data.exes += 1;
+                game_data.fruit_array.push(game_settings.fruit_a.clone());
+                game_data.file_array.push(fruit_file_a.clone());
+            }
+            AnswerButton::O => {
+                game_data.os += 1;
+                game_data.fruit_array.push(game_settings.fruit_b.clone());
+                game_data.file_array.push(fruit_file_b.clone());
+            }
         }
-        counter = _iter + 1;
     }
 
     // To get rid of cases where there are equal amounts of either shape
     if game_data.exes == game_data.os {
-        let shape = print_fruits(
-            rng.gen_range(1..11),
-            //rng.gen_range(0..10),
-            &asset_server,
-            &mut commands,
-            counter,
-            &game_settings,
-        );
+        let shape = choose_fruits(rng.gen_range(1..11));
 
         match shape {
-            AnswerButton::X => game_data.exes += 1,
-            AnswerButton::O => game_data.os += 1,
+            AnswerButton::X => {
+                game_data.exes += 1;
+                game_data.fruit_array.push(game_settings.fruit_a.clone());
+                game_data.file_array.push(fruit_file_a);
+            }
+
+            AnswerButton::O => {
+                game_data.os += 1;
+                game_data.fruit_array.push(game_settings.fruit_b.clone());
+                game_data.file_array.push(fruit_file_b);
+            }
         }
     }
 
+    print_fruits(
+        &asset_server,
+        &mut commands,
+        &game_data.fruit_array,
+        &game_data.file_array,
+    );
     game_data.level += 1;
     next_state.set(AppState::Pause);
 }
 
+fn choose_fruits(random: i32) -> AnswerButton {
+    let return_answer: AnswerButton;
+
+    if random % 2 == 0 {
+        return_answer = AnswerButton::X;
+    } else {
+        return_answer = AnswerButton::O;
+    }
+
+    return return_answer;
+}
+
 fn print_fruits(
-    random: i32,
-    //print_amt: i32,
     asset_server: &Res<AssetServer>,
     commands: &mut Commands,
-    offset: i32,
-    game_settings: &Res<GameSettings>,
-) -> AnswerButton {
-    if random % 2 == 0 {
-        let fruit_file_a = format!("icons/{:?}.png", game_settings.fruit_a).to_lowercase();
-        commands.spawn((
-            SpriteBundle {
-                texture: asset_server.load(fruit_file_a),
-                transform: Transform::from_translation(Vec3::new(
-                    -500.0 + (offset * 50) as f32,
-                    0.0,
-                    0.0,
-                )),
+    fruit_array: &Vec<FruitType>,
+    file_array: &Vec<String>,
+) {
+    let columns = 10;
+    let rows = 5;
+
+    commands
+        .spawn((
+            NodeBundle {
+                style: Style {
+                    // Use the CSS Grid algorithm for laying out this node
+                    display: Display::Grid,
+                    // Make node fill the entirety it's parent (in this case the window)
+                    width: Val::Percent(50.0),
+                    height: Val::Percent(50.0),
+                    // center the node vertically and horizontally within the window
+                    position_type: PositionType::Relative,
+                    top: Val::Percent(30.0),
+                    left: Val::Percent(20.0),
+                    ..default()
+                },
                 ..default()
             },
-            game_settings.fruit_a.clone(),
-        ));
-        //}
-        return AnswerButton::X;
-    } else {
-        let fruit_file_b = format!("icons/{:?}.png", game_settings.fruit_b).to_lowercase();
-        commands.spawn((
-            SpriteBundle {
-                texture: asset_server.load(fruit_file_b),
-                transform: Transform::from_translation(Vec3::new(
-                    -500.0 + (offset * 50) as f32,
-                    0.0,
-                    0.0,
-                )),
-                ..default()
-            },
-            game_settings.fruit_b.clone(),
-        ));
-        //}
-        return AnswerButton::O;
-    }
+            GridIdentifier::Grid,
+        ))
+        .with_children(|builder| {
+            builder
+                .spawn((
+                    NodeBundle {
+                        style: Style {
+                            // Make the height of the node fill its parent
+                            height: Val::Percent(100.0),
+                            // Make the grid have a 1:1 aspect ratio meaning it will scale as an exact square
+                            // As the height is set explicitly, this means the width will adjust to match the height
+                            aspect_ratio: Some(2.3),
+                            // Use grid layout for this node
+                            display: Display::Grid,
+                            // Add 24px of padding around the grid
+                            padding: UiRect::all(Val::Px(24.0)),
+                            // Set the grid to have 4 columns all with sizes minmax(0, 1fr)
+                            // This creates 4 exactly evenly sized columns
+                            grid_template_columns: RepeatedGridTrack::flex(columns, 1.0),
+                            // Set the grid to have 4 rows all with sizes minmax(0, 1fr)
+                            // This creates 4 exactly evenly sized rows
+                            grid_template_rows: RepeatedGridTrack::flex(rows, 1.0),
+                            // Set a 12px gap/gutter between rows and columns
+                            row_gap: Val::Px(15.0),
+                            column_gap: Val::Px(15.0),
+                            ..default()
+                        },
+                        // background_color: BackgroundColor(Color::BEIGE),
+                        ..default()
+                    },
+                    GridIdentifier::Grid,
+                ))
+                .with_children(|builder| {
+                    for (index, _fruit) in fruit_array.iter().enumerate() {
+                        item_rect(
+                            builder,
+                            asset_server,
+                            file_array[index].clone(),
+                            fruit_array[index].clone(),
+                        );
+                    }
+                });
+        });
 }
 
 fn process_guess(
@@ -195,7 +255,7 @@ fn process_guess(
     commands: &mut Commands,
     game_data: &mut ResMut<GameData>,
 ) -> bool {
-    let font = asset_server.load("fonts/FiraSans-Bold.ttf");
+    let font = asset_server.load("fonts/Leila-Regular.ttf");
     if guess.trim() == "x" && exes > os {
         // Spawn Correct
         commands.spawn({
@@ -266,28 +326,6 @@ fn process_guess(
                 ..default()
             }
         });
-        // //Spawn Tally of Fruits
-        // let tally_fruits = format!("Fruit A: {} vs Fruit B:{}", exes, os);
-        // commands.spawn({
-        //     TextBundle {
-        //         text: Text::from_section(
-        //             tally_fruits,
-        //             TextStyle {
-        //                 font,
-        //                 font_size: 48.0,
-        //                 color: Color::SALMON,
-        //             },
-        //         )
-        //         .with_alignment(TextAlignment::Center),
-        //         style: Style {
-        //             top: Val::Percent(80.0),
-        //             left: Val::Percent(36.0),
-
-        //             ..default()
-        //         },
-        //         ..default()
-        //     }
-        // });
         game_data.result = Result::Incorrect;
         return false;
     }
@@ -300,6 +338,31 @@ pub fn setup_ui(
 ) {
     let fruit_file_a = format!("icons/{:?}.png", game_settings.fruit_a).to_lowercase();
     let fruit_file_b = format!("icons/{:?}.png", game_settings.fruit_b).to_lowercase();
+
+    // Spawn Timer Text
+    let timer: String = format!("Time: 05:00");
+    let font = asset_server.load("fonts/Leila-Regular.ttf");
+    commands.spawn({
+        TextBundle {
+            text: Text::from_section(
+                timer,
+                TextStyle {
+                    font,
+                    font_size: 64.0,
+                    color: OLIVE_GREEN,
+                },
+            )
+            .with_alignment(TextAlignment::Center),
+            style: Style {
+                top: Val::Px(0.0),
+                right: Val::Px(0.0),
+
+                ..default()
+            },
+            ..default()
+        }
+    });
+
     commands
         .spawn((NodeBundle {
             style: Style {
@@ -536,6 +599,7 @@ pub fn clear_shapes(
     mut commands: Commands,
     mut query_text: Query<Entity, (With<Text>, Without<AnswerButton>)>,
     mut query_fruit: Query<Entity, (With<FruitType>, Without<Node>)>,
+    mut query_grid: Query<Entity, With<GridIdentifier>>,
 ) {
     for entity in query_text.iter_mut() {
         if let Some(entity) = commands.get_entity(entity) {
@@ -544,6 +608,12 @@ pub fn clear_shapes(
     }
 
     for entity in query_fruit.iter_mut() {
+        if let Some(entity) = commands.get_entity(entity) {
+            entity.despawn_recursive();
+        }
+    }
+
+    for entity in query_grid.iter_mut() {
         if let Some(entity) = commands.get_entity(entity) {
             entity.despawn_recursive();
         }
@@ -575,3 +645,39 @@ pub fn game_over(
     }
     next_state.set(AppState::MainMenu);
 }
+
+/// Create a coloured rectangle node. The node has size as it is assumed that it will be
+/// spawned as a child of a Grid container with `AlignItems::Stretch` and `JustifyItems::Stretch`
+/// which will allow it to take it's size from the size of the grid area it occupies.
+fn item_rect(
+    builder: &mut ChildBuilder,
+    asset_server: &Res<AssetServer>,
+    fruit_file: String,
+    fruit_type: FruitType,
+) {
+    builder
+        .spawn((
+            NodeBundle {
+                style: Style {
+                    display: Display::Grid,
+                    padding: UiRect::all(Val::Px(3.0)),
+                    ..default()
+                },
+                // background_color: BackgroundColor(Color::BEIGE),
+                ..default()
+            },
+            GridIdentifier::Grid,
+        ))
+        .with_children(|builder| {
+            builder.spawn((
+                ImageBundle {
+                    image: asset_server.load(fruit_file).into(),
+                    ..default()
+                },
+                fruit_type.clone(),
+                GridIdentifier::Grid,
+            ));
+        });
+}
+
+pub fn spawn_timer(timer: ResMut<PauseTimer>) {}

@@ -10,7 +10,7 @@ pub enum BackButton {
 pub fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
     // Spawn Title Text
     let title = format!("Leaderboard");
-    let font = asset_server.load("fonts/FiraSans-Bold.ttf");
+    let font = asset_server.load("fonts/Leila-Regular.ttf");
     commands.spawn({
         TextBundle {
             text: Text::from_section(
@@ -23,6 +23,8 @@ pub fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
             )
             .with_alignment(TextAlignment::Center),
             style: Style {
+                justify_content: JustifyContent::SpaceEvenly,
+                align_items: AlignItems::Center,
                 top: Val::Percent(10.0),
                 left: Val::Percent(38.0),
 
@@ -77,7 +79,7 @@ pub fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
                         TextBundle::from_section(
                             "Back",
                             TextStyle {
-                                font: asset_server.load("fonts/FiraSans-Bold.ttf"),
+                                font: asset_server.load("fonts/Leila-Regular.ttf"),
                                 font_size: 40.0,
                                 color: OLIVE_GREEN,
                             },
