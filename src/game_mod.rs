@@ -1,8 +1,18 @@
-use bevy::prelude::*;
+use bevy::{
+    audio::{PlaybackMode, Volume},
+    prelude::*,
+};
+use bevy_tweening::{
+    lens::UiPositionLens, Animator, EaseFunction, RepeatCount, RepeatStrategy, Tween,
+};
 use rand::Rng;
 use std::time::Duration;
 
-use crate::{main_menu::OLIVE_GREEN, settings::GameSettings, AppState};
+use crate::{
+    main_menu::{SoundEffect, OLIVE_GREEN},
+    settings::GameSettings,
+    AppState,
+};
 
 #[derive(Resource)]
 pub struct GameData {
@@ -241,6 +251,7 @@ fn print_fruits(
                             asset_server,
                             file_array[index].clone(),
                             fruit_array[index].clone(),
+                            index % 2 == 0,
                         );
                     }
                 });
@@ -258,6 +269,17 @@ fn process_guess(
     let font = asset_server.load("fonts/Leila-Regular.ttf");
     if guess.trim() == "x" && exes > os {
         // Spawn Correct
+        commands.spawn((
+            AudioBundle {
+                source: asset_server.load("music/Correct.ogg"),
+                settings: PlaybackSettings {
+                    mode: PlaybackMode::Despawn,
+                    ..Default::default()
+                },
+                ..default()
+            },
+            SoundEffect,
+        ));
         commands.spawn({
             TextBundle {
                 text: Text::from_section(
@@ -282,6 +304,17 @@ fn process_guess(
         return true;
     } else if guess.trim() == "o" && os > exes {
         // Spawn Correct
+        commands.spawn((
+            AudioBundle {
+                source: asset_server.load("music/Correct.ogg"),
+                settings: PlaybackSettings {
+                    mode: PlaybackMode::Despawn,
+                    ..Default::default()
+                },
+                ..default()
+            },
+            SoundEffect,
+        ));
         commands.spawn({
             TextBundle {
                 text: Text::from_section(
@@ -306,6 +339,17 @@ fn process_guess(
         return true;
     } else {
         //Spawn Incorrect
+        commands.spawn((
+            AudioBundle {
+                source: asset_server.load("music/Incorrect.ogg"),
+                settings: PlaybackSettings {
+                    mode: PlaybackMode::Despawn,
+                    ..Default::default()
+                },
+                ..default()
+            },
+            SoundEffect,
+        ));
         commands.spawn({
             TextBundle {
                 text: Text::from_section(
@@ -339,6 +383,16 @@ pub fn setup_ui(
     let fruit_file_a = format!("icons/{:?}.png", game_settings.fruit_a).to_lowercase();
     let fruit_file_b = format!("icons/{:?}.png", game_settings.fruit_b).to_lowercase();
 
+    // Spawn Music
+    commands.spawn(AudioBundle {
+        source: asset_server.load("music/Bees.ogg"),
+        settings: PlaybackSettings {
+            volume: Volume::new_relative(0.5),
+            ..Default::default()
+        },
+        ..default()
+    });
+
     // Spawn Timer Text
     let timer: String = format!("Time: 05:00");
     let font = asset_server.load("fonts/Leila-Regular.ttf");
@@ -351,8 +405,7 @@ pub fn setup_ui(
                     font_size: 64.0,
                     color: OLIVE_GREEN,
                 },
-            )
-            .with_alignment(TextAlignment::Center),
+            ),
             style: Style {
                 top: Val::Px(0.0),
                 right: Val::Px(0.0),
@@ -479,7 +532,34 @@ pub fn interact_button(
     mut timer: ResMut<PauseTimer>,
 ) {
     // Keyboard Input
+    // Escape to Main Menu
+    if keyboard_input.just_released(KeyCode::Escape) {
+        commands.spawn((
+            AudioBundle {
+                source: asset_server.load("music/Back.ogg"),
+                settings: PlaybackSettings {
+                    mode: PlaybackMode::Despawn,
+                    ..Default::default()
+                },
+                ..default()
+            },
+            SoundEffect,
+        ));
+        next_state.set(AppState::GameOver);
+    }
+    // Fruit A Select
     if keyboard_input.just_released(KeyCode::Z) {
+        commands.spawn((
+            AudioBundle {
+                source: asset_server.load("music/Answer.ogg"),
+                settings: PlaybackSettings {
+                    mode: PlaybackMode::Despawn,
+                    ..Default::default()
+                },
+                ..default()
+            },
+            SoundEffect,
+        ));
         game_data.player_guess = "x".to_string();
         timer.pause_timer.pause();
         process_guess(
@@ -492,8 +572,19 @@ pub fn interact_button(
         );
         next_state.set(AppState::ShowResults);
     }
-
+    // Fruit B Select
     if keyboard_input.just_released(KeyCode::X) {
+        commands.spawn((
+            AudioBundle {
+                source: asset_server.load("music/Answer.ogg"),
+                settings: PlaybackSettings {
+                    mode: PlaybackMode::Despawn,
+                    ..Default::default()
+                },
+                ..default()
+            },
+            SoundEffect,
+        ));
         game_data.player_guess = "o".to_string();
         timer.pause_timer.pause();
         process_guess(
@@ -510,6 +601,17 @@ pub fn interact_button(
     for (interaction, answer_button, mut border_color) in interaction_query.iter_mut() {
         match *interaction {
             Interaction::Pressed => {
+                commands.spawn((
+                    AudioBundle {
+                        source: asset_server.load("music/Answer.ogg"),
+                        settings: PlaybackSettings {
+                            mode: PlaybackMode::Despawn,
+                            ..Default::default()
+                        },
+                        ..default()
+                    },
+                    SoundEffect,
+                ));
                 *border_color = Color::WHITE.into();
                 match answer_button {
                     AnswerButton::X => game_data.player_guess = "x".to_string(),
@@ -537,6 +639,8 @@ pub fn interact_button(
 }
 
 pub fn show_results(
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
     time: Res<Time>,
     mut timer: ResMut<ResultTimer>,
     mut next_state: ResMut<NextState<AppState>>,
@@ -625,6 +729,7 @@ pub fn game_over(
     mut query_text: Query<Entity, With<Text>>,
     mut query_button: Query<Entity, With<Style>>,
     mut query_fruit: Query<Entity, With<FruitType>>,
+    mut query_music: Query<Entity, (With<PlaybackSettings>, Without<SoundEffect>)>,
     mut next_state: ResMut<NextState<AppState>>,
 ) {
     for entity in query_text.iter_mut() {
@@ -643,6 +748,11 @@ pub fn game_over(
             entity.despawn_recursive();
         }
     }
+    for entity in query_music.iter_mut() {
+        if let Some(entity) = commands.get_entity(entity) {
+            entity.despawn_recursive();
+        }
+    }
     next_state.set(AppState::MainMenu);
 }
 
@@ -654,6 +764,7 @@ fn item_rect(
     asset_server: &Res<AssetServer>,
     fruit_file: String,
     fruit_type: FruitType,
+    bounce_type: bool,
 ) {
     builder
         .spawn((
@@ -663,7 +774,6 @@ fn item_rect(
                     padding: UiRect::all(Val::Px(3.0)),
                     ..default()
                 },
-                // background_color: BackgroundColor(Color::BEIGE),
                 ..default()
             },
             GridIdentifier::Grid,
@@ -676,6 +786,22 @@ fn item_rect(
                 },
                 fruit_type.clone(),
                 GridIdentifier::Grid,
+                Animator::new(
+                    Tween::new(
+                        if bounce_type {
+                            EaseFunction::BounceIn
+                        } else {
+                            EaseFunction::BounceOut
+                        },
+                        Duration::from_secs(1),
+                        UiPositionLens {
+                            start: UiRect::top(Val::Px(10.0)),
+                            end: UiRect::top(Val::Px(0.0)),
+                        },
+                    )
+                    .with_repeat_strategy(RepeatStrategy::MirroredRepeat)
+                    .with_repeat_count(RepeatCount::Infinite),
+                ),
             ));
         });
 }

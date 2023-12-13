@@ -1,5 +1,6 @@
 use crate::settings::GameSettings;
 use crate::{game_mod, AppState};
+use bevy::audio::{PlaybackMode, Volume};
 use bevy::render::color::*;
 use bevy::{core_pipeline::clear_color::ClearColorConfig, prelude::*};
 
@@ -20,6 +21,9 @@ pub struct AnimationIndices {
     last: usize,
 }
 
+#[derive(Component)]
+pub struct SoundEffect;
+
 #[derive(Component, Deref, DerefMut)]
 pub struct AnimationTimer(Timer);
 
@@ -34,6 +38,16 @@ pub fn setup_menu(
             entity.despawn_recursive();
         }
     }
+    // Spawn Music
+    commands.spawn(AudioBundle {
+        source: asset_server.load("music/Dandelions.ogg"),
+        settings: PlaybackSettings {
+            volume: Volume::new_relative(0.5),
+            ..Default::default()
+        },
+        ..default()
+    });
+
     // Spawn Camera in Foreground
     commands.spawn(Camera2dBundle {
         camera_2d: Camera2d {
@@ -48,7 +62,7 @@ pub fn setup_menu(
         TextureAtlas::from_grid(texture_handle, Vec2::new(960.0, 540.0), 6, 1, None, None);
     let texture_atlas_handle = texture_atlases.add(texture_atlas);
     // Use only the subset of sprites in the sheet that make up the run animation
-    let animation_indices = AnimationIndices { first: 0, last: 5 };
+    let animation_indices = AnimationIndices { first: 1, last: 5 };
     commands.spawn((
         SpriteSheetBundle {
             texture_atlas: texture_atlas_handle,
@@ -315,6 +329,8 @@ pub fn animate_menu_title(
 }
 
 pub fn interact_menu(
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
     mut interaction_query: Query<
         (&Interaction, &ActionButton, &mut BorderColor),
         (Changed<Interaction>, With<Button>),
@@ -327,12 +343,34 @@ pub fn interact_menu(
     // }
 
     if keyboard_input.just_released(KeyCode::Return) {
+        commands.spawn((
+            AudioBundle {
+                source: asset_server.load("music/Select.ogg"),
+                settings: PlaybackSettings {
+                    mode: PlaybackMode::Despawn,
+                    ..Default::default()
+                },
+                ..default()
+            },
+            SoundEffect,
+        ));
         next_state.set(AppState::StartRound);
     }
     // Buttons
     for (interaction, answer_button, mut border_color) in interaction_query.iter_mut() {
         match *interaction {
             Interaction::Pressed => {
+                commands.spawn((
+                    AudioBundle {
+                        source: asset_server.load("music/Select.ogg"),
+                        settings: PlaybackSettings {
+                            mode: PlaybackMode::Despawn,
+                            ..Default::default()
+                        },
+                        ..default()
+                    },
+                    SoundEffect,
+                ));
                 *border_color = Color::WHITE.into();
                 match answer_button {
                     ActionButton::HowToPlay => next_state.set(AppState::HowToPlay),
@@ -356,6 +394,7 @@ pub fn clear_shapes(
     mut commands: Commands,
     mut query: Query<Entity, With<ActionButton>>,
     mut query_title: Query<Entity, With<AnimationTimer>>,
+    mut query_music: Query<Entity, (With<PlaybackSettings>, Without<SoundEffect>)>,
     current_state: Res<State<AppState>>,
     asset_server: Res<AssetServer>,
     game_settings: Res<GameSettings>,
@@ -366,6 +405,11 @@ pub fn clear_shapes(
         }
     }
     for entity in query_title.iter_mut() {
+        if let Some(entity) = commands.get_entity(entity) {
+            entity.despawn_recursive();
+        }
+    }
+    for entity in query_music.iter_mut() {
         if let Some(entity) = commands.get_entity(entity) {
             entity.despawn_recursive();
         }

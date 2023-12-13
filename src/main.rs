@@ -4,19 +4,29 @@ mod how_to_play;
 mod leaderboard;
 mod main_menu;
 mod settings;
+use bevy_tweening::TweeningPlugin;
 use game_mod::*;
-use main_menu::*;
 use settings::*;
+
+#[derive(Resource, Default)]
+pub struct Handles {
+    pub audio_handles: Vec<Handle<AudioSource>>,
+    pub main_menu: Handle<Image>,
+}
 
 fn main() {
     App::new()
         .insert_resource(AssetMetaCheck::Never)
-        .add_plugins(DefaultPlugins.set(ImagePlugin::default_nearest()))
+        .add_plugins((
+            DefaultPlugins.set(ImagePlugin::default_nearest()),
+            TweeningPlugin,
+        ))
         .init_resource::<GameData>()
         .init_resource::<GameSettings>()
         .init_resource::<PlayerData>()
-        .add_systems(Startup, startup)
+        .init_resource::<Handles>()
         .add_state::<AppState>()
+        .add_systems(Startup, startup)
         .add_systems(
             OnEnter(AppState::StartRound),
             (game_mod::clear_shapes, game_mod::play_game).chain(),
@@ -41,10 +51,6 @@ fn main() {
         .add_systems(
             Update,
             leaderboard::interact_button.run_if(in_state(AppState::Leaderboard)),
-        )
-        .add_systems(
-            Update,
-            settings::interact_button.run_if(in_state(AppState::Settings)),
         )
         .add_systems(
             Update,
@@ -91,13 +97,41 @@ fn main() {
         .run();
 }
 
-fn startup(
-    commands: Commands,
-    asset_server: Res<AssetServer>,
-    camera_query: Query<Entity, With<Camera2d>>,
-    texture_atlases: ResMut<Assets<TextureAtlas>>,
-) {
-    setup_menu(commands, asset_server, camera_query, texture_atlases);
+fn startup(asset_server: Res<AssetServer>, mut handles: ResMut<Handles>) {
+    handles.main_menu = asset_server.load("icons/Title.png");
+    handles
+        .audio_handles
+        .push(asset_server.load("music/Petunia.ogg"));
+    handles
+        .audio_handles
+        .push(asset_server.load("music/Back.ogg"));
+    handles
+        .audio_handles
+        .push(asset_server.load("music/Select.ogg"));
+    handles
+        .audio_handles
+        .push(asset_server.load("music/Correct.ogg"));
+    handles
+        .audio_handles
+        .push(asset_server.load("music/Incorrect.ogg"));
+    handles
+        .audio_handles
+        .push(asset_server.load("music/Answer.ogg"));
+    handles
+        .audio_handles
+        .push(asset_server.load("music/Bees.ogg"));
+    handles
+        .audio_handles
+        .push(asset_server.load("music/Dandelions.ogg"));
+    handles
+        .audio_handles
+        .push(asset_server.load("music/NewChar.ogg"));
+    handles
+        .audio_handles
+        .push(asset_server.load("music/Path.ogg"));
+    handles
+        .audio_handles
+        .push(asset_server.load("music/Rain.ogg"));
 }
 
 #[derive(Debug, Clone, Copy, Default, Eq, PartialEq, Hash, States)]

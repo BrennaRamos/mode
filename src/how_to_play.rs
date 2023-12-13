@@ -1,6 +1,12 @@
-use bevy::prelude::*;
+use bevy::{
+    audio::{PlaybackMode, Volume},
+    prelude::*,
+};
 
-use crate::{main_menu::OLIVE_GREEN, AppState};
+use crate::{
+    main_menu::{SoundEffect, OLIVE_GREEN},
+    AppState,
+};
 
 #[derive(Component)]
 pub enum BackButton {
@@ -8,6 +14,15 @@ pub enum BackButton {
 }
 
 pub fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
+    // Spawn Music
+    commands.spawn(AudioBundle {
+        source: asset_server.load("music/Path.ogg"),
+        settings: PlaybackSettings {
+            volume: Volume::new_relative(0.5),
+            ..Default::default()
+        },
+        ..default()
+    });
     // Spawn Title Text
     let title = format!("How To Play");
     let font = asset_server.load("fonts/Leila-Regular.ttf");
@@ -144,6 +159,8 @@ pub fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
 }
 
 pub fn interact_button(
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
     mut interaction_query: Query<
         (&Interaction, &BackButton, &mut BorderColor),
         (Changed<Interaction>, With<Button>),
@@ -152,12 +169,34 @@ pub fn interact_button(
     keyboard_input: Res<Input<KeyCode>>,
 ) {
     if keyboard_input.just_released(KeyCode::Escape) {
+        commands.spawn((
+            AudioBundle {
+                source: asset_server.load("music/Back.ogg"),
+                settings: PlaybackSettings {
+                    mode: PlaybackMode::Despawn,
+                    ..Default::default()
+                },
+                ..default()
+            },
+            SoundEffect,
+        ));
         next_state.set(AppState::MainMenu);
     }
     // Buttons
     for (interaction, answer_button, mut border_color) in interaction_query.iter_mut() {
         match *interaction {
             Interaction::Pressed => {
+                commands.spawn((
+                    AudioBundle {
+                        source: asset_server.load("music/Select.ogg"),
+                        settings: PlaybackSettings {
+                            mode: PlaybackMode::Despawn,
+                            ..Default::default()
+                        },
+                        ..default()
+                    },
+                    SoundEffect,
+                ));
                 *border_color = Color::WHITE.into();
                 match answer_button {
                     BackButton::MainMenu => next_state.set(AppState::MainMenu),
@@ -177,6 +216,7 @@ pub fn clear_shapes(
     mut commands: Commands,
     mut query: Query<Entity, With<BackButton>>,
     mut query_title: Query<Entity, With<Text>>,
+    mut query_music: Query<Entity, (With<PlaybackSettings>, Without<SoundEffect>)>,
 ) {
     for entity in query.iter_mut() {
         if let Some(entity) = commands.get_entity(entity) {
@@ -184,6 +224,11 @@ pub fn clear_shapes(
         }
     }
     for entity in query_title.iter_mut() {
+        if let Some(entity) = commands.get_entity(entity) {
+            entity.despawn_recursive();
+        }
+    }
+    for entity in query_music.iter_mut() {
         if let Some(entity) = commands.get_entity(entity) {
             entity.despawn_recursive();
         }

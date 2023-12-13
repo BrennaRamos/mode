@@ -1,6 +1,13 @@
-use bevy::prelude::*;
+use bevy::{
+    audio::{PlaybackMode, Volume},
+    prelude::*,
+};
 
-use crate::{game_mod::FruitType, main_menu::OLIVE_GREEN, AppState};
+use crate::{
+    game_mod::FruitType,
+    main_menu::{SoundEffect, OLIVE_GREEN},
+    AppState,
+};
 
 #[derive(Component)]
 pub enum BackButton {
@@ -32,6 +39,15 @@ impl Default for GameSettings {
 }
 
 pub fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
+    // Spawn Music
+    commands.spawn(AudioBundle {
+        source: asset_server.load("music/Rain.ogg"),
+        settings: PlaybackSettings {
+            volume: Volume::new_relative(0.2),
+            ..Default::default()
+        },
+        ..default()
+    });
     // Spawn Title Text
     let title = format!("Settings");
     let font = asset_server.load("fonts/Leila-Regular.ttf");
@@ -113,6 +129,8 @@ pub fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
 }
 
 pub fn interact_button(
+    mut commands: Commands,
+    asset_server: ResMut<AssetServer>,
     mut interaction_query: Query<
         (&Interaction, &BackButton, &mut BorderColor),
         (Changed<Interaction>, With<Button>),
@@ -121,12 +139,34 @@ pub fn interact_button(
     keyboard_input: Res<Input<KeyCode>>,
 ) {
     if keyboard_input.just_released(KeyCode::Escape) {
+        commands.spawn((
+            AudioBundle {
+                source: asset_server.load("music/Back.ogg"),
+                settings: PlaybackSettings {
+                    mode: PlaybackMode::Despawn,
+                    ..Default::default()
+                },
+                ..default()
+            },
+            SoundEffect,
+        ));
         next_state.set(AppState::MainMenu);
     }
     // Buttons
     for (interaction, answer_button, mut border_color) in interaction_query.iter_mut() {
         match *interaction {
             Interaction::Pressed => {
+                commands.spawn((
+                    AudioBundle {
+                        source: asset_server.load("music/Select.ogg"),
+                        settings: PlaybackSettings {
+                            mode: PlaybackMode::Despawn,
+                            ..Default::default()
+                        },
+                        ..default()
+                    },
+                    SoundEffect,
+                ));
                 *border_color = Color::WHITE.into();
                 match answer_button {
                     BackButton::MainMenu => next_state.set(AppState::MainMenu),
@@ -188,6 +228,8 @@ pub fn hover_fruit(
 }
 
 pub fn set_fruits(
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
     mut interaction_query: Query<&FruitType, (With<Button>, With<Hovered>)>,
     mouse_input: Res<Input<MouseButton>>,
     mut game_settings: ResMut<GameSettings>,
@@ -197,6 +239,17 @@ pub fn set_fruits(
             if fruit_type != &game_settings.fruit_b {
                 game_settings.fruit_a = fruit_type.clone();
             }
+            commands.spawn((
+                AudioBundle {
+                    source: asset_server.load("music/Select.ogg"),
+                    settings: PlaybackSettings {
+                        mode: PlaybackMode::Despawn,
+                        ..Default::default()
+                    },
+                    ..default()
+                },
+                SoundEffect,
+            ));
         }
     }
     if mouse_input.just_released(MouseButton::Right) {
@@ -204,6 +257,17 @@ pub fn set_fruits(
             if fruit_type != &game_settings.fruit_a {
                 game_settings.fruit_b = fruit_type.clone();
             }
+            commands.spawn((
+                AudioBundle {
+                    source: asset_server.load("music/Select.ogg"),
+                    settings: PlaybackSettings {
+                        mode: PlaybackMode::Despawn,
+                        ..Default::default()
+                    },
+                    ..default()
+                },
+                SoundEffect,
+            ));
         }
     }
 }
@@ -447,6 +511,7 @@ pub fn clear_shapes(
     mut query_title: Query<Entity, With<Text>>,
     mut query_stamps: Query<Entity, With<Sprite>>,
     mut query_fruits: Query<Entity, With<Node>>,
+    mut query_music: Query<Entity, (With<PlaybackSettings>, Without<SoundEffect>)>,
 ) {
     for entity in query.iter_mut() {
         if let Some(entity) = commands.get_entity(entity) {
@@ -464,6 +529,11 @@ pub fn clear_shapes(
         }
     }
     for entity in query_fruits.iter_mut() {
+        if let Some(entity) = commands.get_entity(entity) {
+            entity.despawn_recursive();
+        }
+    }
+    for entity in query_music.iter_mut() {
         if let Some(entity) = commands.get_entity(entity) {
             entity.despawn_recursive();
         }
