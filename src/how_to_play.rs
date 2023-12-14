@@ -38,42 +38,20 @@ pub fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
             )
             .with_alignment(TextAlignment::Center),
             style: Style {
-                top: Val::Percent(10.0),
-                left: Val::Percent(38.0),
+                top: Val::Vh(-30.0),
+                justify_self: JustifySelf::Center,
+                align_self: AlignSelf::Center,
                 ..default()
             },
             ..default()
         }
     });
 
-    // Spawn Subtitle Text
-    let title = format!(
+    let subtitle = format!(
         "The village of Odemay is hungry! They need more fruit to survive the winter. 
     Could you lend a hand in picking the fruit that is more abundant?"
     );
-    let font = asset_server.load("fonts/Leila-Regular.ttf");
-    commands.spawn({
-        TextBundle {
-            text: Text::from_section(
-                title,
-                TextStyle {
-                    font,
-                    font_size: 32.0,
-                    color: Color::SALMON,
-                },
-            )
-            .with_alignment(TextAlignment::Center),
-            style: Style {
-                top: Val::Percent(35.0),
-                left: Val::Percent(5.0),
-                ..default()
-            },
-            ..default()
-        }
-    });
-
-    // Spawn Bullet Point Text
-    let title = format!(
+    let text = format!(
         "    .:. Two types of fruit will spawn on the screen in different quantities .:.
     .:. Choose which fruit there is more of using the Z and X keys or the on screen buttons .:.
     .:. Each level gives you five seconds to guess. Guess as quickly as you can for a better score! .:.
@@ -81,32 +59,72 @@ pub fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
     .:. Depending on your performance, you can unlock more characters for your village .:."
     );
     let font = asset_server.load("fonts/Leila-Regular.ttf");
-    commands.spawn({
-        TextBundle {
-            text: Text::from_section(
-                title,
-                TextStyle {
-                    font,
-                    font_size: 27.0,
-                    color: OLIVE_GREEN,
-                },
-            )
-            .with_alignment(TextAlignment::Center),
+    commands
+        .spawn(NodeBundle {
             style: Style {
-                top: Val::Percent(50.0),
-                left: Val::Percent(0.0),
+                // horizontally center child text
+                justify_self: JustifySelf::Center,
+                // vertically center child text
+                align_self: AlignSelf::Center,
+                flex_direction: FlexDirection::Column,
                 ..default()
             },
             ..default()
-        }
-    });
+        })
+        .with_children(|parent| {
+            parent
+                // Spawn Subtitle Text
+                .spawn({
+                    TextBundle {
+                        text: Text::from_section(
+                            subtitle,
+                            TextStyle {
+                                font: font.clone(),
+                                font_size: 32.0,
+                                color: Color::SALMON,
+                            },
+                        )
+                        .with_alignment(TextAlignment::Center),
+                        style: Style {
+                            //top: Val::Vh(-10.0),
+                            justify_self: JustifySelf::Center,
+                            align_self: AlignSelf::Center,
+                            ..default()
+                        },
+                        ..default()
+                    }
+                });
+            // Spawn Text
+            parent.spawn({
+                TextBundle {
+                    text: Text::from_section(
+                        text,
+                        TextStyle {
+                            font: font.clone(),
+                            font_size: 27.0,
+                            color: OLIVE_GREEN,
+                        },
+                    )
+                    .with_alignment(TextAlignment::Center),
+                    style: Style {
+                        justify_self: JustifySelf::Center,
+                        align_self: AlignSelf::Center,
+                        margin: UiRect {
+                            top: Val::Vh(5.0),
+                            ..default()
+                        },
+                        ..default()
+                    },
+                    ..default()
+                }
+            });
+        });
 
-    // Spawn Menu Buttons
+    // Spawn Menu Button
     commands
         .spawn((
             NodeBundle {
                 style: Style {
-                    // bottom left button
                     width: Val::Percent(100.),
                     height: Val::Percent(100.),
                     justify_content: JustifyContent::Start,

@@ -1,4 +1,5 @@
 use crate::AppState;
+use bevy::render::camera::ScalingMode;
 use bevy::render::color::*;
 use bevy::{core_pipeline::clear_color::ClearColorConfig, prelude::*};
 
@@ -30,6 +31,13 @@ pub fn setup_loading(
     commands.spawn(Camera2dBundle {
         camera_2d: Camera2d {
             clear_color: ClearColorConfig::Custom(Color::BISQUE),
+        },
+        projection: OrthographicProjection {
+            scaling_mode: ScalingMode::Fixed {
+                width: 1280.0,
+                height: 720.0,
+            },
+            ..default()
         },
         transform: Transform::from_translation(Vec3::new(0.0, 0.0, 5.0)),
         ..default()

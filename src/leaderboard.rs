@@ -13,6 +13,612 @@ pub enum BackButton {
     MainMenu,
 }
 
+use bevy::input::keyboard::KeyboardInput;
+use bevy_async_task::{AsyncTaskRunner, AsyncTaskStatus};
+use serde::{Deserialize, Serialize};
+
+pub struct LeaderboardPlugin;
+impl Plugin for LeaderboardPlugin {
+    fn build(&self, app: &mut App) {
+        app.add_systems(
+            Update,
+            (
+                (
+                    listen_received_character_events,
+                    listen_keyboard_input_events,
+                    update_text_edit_state,
+                    update_button_look,
+                    handle_submit_button,
+                    spawn_leaderboard,
+                )
+                    .run_if(in_state(AppState::Leaderboard)),
+                update_round,
+            ),
+        )
+        .init_resource::<User>()
+        .add_event::<UpdateRoundEvent>();
+    }
+}
+
+#[derive(Event)]
+pub struct UpdateRoundEvent {
+    pub round: i64,
+}
+
+#[derive(Resource, Default, Deserialize, Serialize)]
+pub struct User {
+    pub user: String,
+    pub pin: i64,
+    pub score: i64,
+}
+
+#[derive(Component)]
+pub struct Leaderboard;
+
+#[derive(Component)]
+pub struct LoginText;
+
+#[derive(Component)]
+pub struct LoginForm;
+
+#[derive(Component)]
+pub struct Username;
+
+#[derive(Component)]
+pub struct Password {
+    pub value: String,
+}
+
+#[derive(Component)]
+pub struct Submit;
+
+#[derive(Component)]
+pub struct Editing;
+
+#[derive(Component)]
+pub struct Editable;
+
+#[derive(Serialize, Deserialize, Debug)]
+struct UserScore {
+    user: String,
+    score: i64,
+}
+
+pub fn setup_scene(mut commands: Commands, login_data: ResMut<User>) {
+    if !login_data.user.is_empty() {
+        spawn_user_text(&mut commands, &login_data);
+
+        return;
+    }
+
+    // Spawn form buttons if user is default
+    commands
+        .spawn((
+            NodeBundle {
+                style: Style {
+                    justify_self: JustifySelf::Start,
+                    align_self: AlignSelf::Center,
+                    flex_direction: FlexDirection::Column,
+                    padding: UiRect::all(Val::Px(25.0)),
+                    ..default()
+                },
+                background_color: BackgroundColor(Color::BLACK),
+                ..default()
+            },
+            LoginForm,
+        ))
+        .with_children(|builder| {
+            builder.spawn(TextBundle {
+                text: Text::from_section(
+                    "USERNAME".to_string(),
+                    TextStyle {
+                        font_size: 20.0,
+                        color: Color::WHITE,
+                        ..default()
+                    },
+                ),
+                ..default()
+            });
+            builder
+                .spawn((
+                    ButtonBundle {
+                        style: Style {
+                            height: Val::Px(50.0),
+                            width: Val::Px(400.0),
+                            ..default()
+                        },
+                        ..default()
+                    },
+                    Username,
+                    Editable,
+                ))
+                .with_children(|builder| {
+                    builder.spawn(TextBundle {
+                        text: Text::from_section(
+                            "".to_string(),
+                            TextStyle {
+                                font_size: 40.0,
+                                color: Color::WHITE,
+                                ..default()
+                            },
+                        ),
+                        ..default()
+                    });
+                });
+
+            builder.spawn(TextBundle {
+                text: Text::from_section(
+                    "PIN".to_string(),
+                    TextStyle {
+                        font_size: 20.0,
+                        color: Color::WHITE,
+                        ..default()
+                    },
+                ),
+                style: Style {
+                    margin: UiRect::top(Val::Px(20.0)),
+                    ..default()
+                },
+                ..default()
+            });
+            builder
+                .spawn((
+                    ButtonBundle {
+                        style: Style {
+                            height: Val::Px(50.0),
+                            width: Val::Px(400.0),
+                            ..default()
+                        },
+                        ..default()
+                    },
+                    Password {
+                        value: String::new(),
+                    },
+                    Editable,
+                ))
+                .with_children(|builder| {
+                    builder.spawn(TextBundle {
+                        text: Text::from_section(
+                            "".to_string(),
+                            TextStyle {
+                                font_size: 40.0,
+                                color: Color::WHITE,
+                                ..default()
+                            },
+                        ),
+                        ..default()
+                    });
+                });
+
+            builder
+                .spawn((
+                    ButtonBundle {
+                        style: Style {
+                            margin: UiRect::top(Val::Px(20.0)),
+                            height: Val::Px(60.0),
+                            width: Val::Px(200.0),
+                            align_self: AlignSelf::Center,
+                            justify_self: JustifySelf::Center,
+                            justify_items: JustifyItems::Center,
+                            justify_content: JustifyContent::Center,
+                            align_items: AlignItems::Center,
+                            ..default()
+                        },
+                        ..default()
+                    },
+                    Submit,
+                ))
+                .with_children(|builder| {
+                    builder.spawn(TextBundle {
+                        text: Text::from_section(
+                            "SUBMIT".to_string(),
+                            TextStyle {
+                                font_size: 40.0,
+                                color: Color::WHITE,
+                                ..default()
+                            },
+                        ),
+                        ..default()
+                    });
+                });
+        });
+}
+
+fn update_round(
+    mut round_executor: AsyncTaskRunner<Result<ehttp::Response, ehttp::Error>>,
+    mut update_round_events: EventReader<UpdateRoundEvent>,
+    mut login_data: ResMut<User>,
+) {
+    match round_executor.poll() {
+        AsyncTaskStatus::Finished(_) => (),
+        _ => (),
+    }
+
+    for event in update_round_events.read() {
+        if event.round > login_data.score {
+            login_data.score = event.round;
+            if let Ok(user) = serde_json::ser::to_vec(&User {
+                user: login_data.user.clone(),
+                pin: login_data.pin,
+                score: login_data.score,
+            }) {
+                let mut request = ehttp::Request::post("http://5.161.78.176:3000/update", user);
+                request
+                    .headers
+                    .insert("Content-Type".into(), "application/json".into());
+                round_executor.start(ehttp::fetch_async(request));
+            }
+        }
+    }
+}
+
+fn spawn_leaderboard(
+    mut commands: Commands,
+    mut response_executor: AsyncTaskRunner<Result<ehttp::Response, ehttp::Error>>,
+    leaderboard_query: Query<Entity, With<Leaderboard>>,
+) {
+    if !leaderboard_query.is_empty() {
+        return;
+    }
+
+    match response_executor.poll() {
+        AsyncTaskStatus::Idle => {
+            let request = ehttp::Request::get("http://5.161.78.176:3000/");
+            response_executor.start(ehttp::fetch_async(request));
+        }
+        AsyncTaskStatus::Finished(response) => {
+            if let Ok(response) = response {
+                if let Ok(leaderboard) =
+                    serde_json::from_str::<Vec<UserScore>>(response.text().unwrap())
+                {
+                    commands
+                        .spawn((
+                            NodeBundle {
+                                style: Style {
+                                    justify_self: JustifySelf::End,
+                                    align_self: AlignSelf::Center,
+                                    flex_direction: FlexDirection::Column,
+                                    ..default()
+                                },
+                                ..default()
+                            },
+                            Leaderboard,
+                        ))
+                        .with_children(|builder| {
+                            for (idx, user_score) in leaderboard.iter().enumerate() {
+                                builder
+                                    .spawn(NodeBundle {
+                                        style: Style {
+                                            justify_content: JustifyContent::SpaceBetween,
+                                            align_items: AlignItems::Center,
+                                            width: Val::Px(300.0),
+                                            ..default()
+                                        },
+                                        ..default()
+                                    })
+                                    .with_children(|builder| {
+                                        builder.spawn(TextBundle {
+                                            style: Style {
+                                                margin: UiRect::right(Val::Px(15.0)),
+                                                width: Val::Px(20.0),
+                                                ..default()
+                                            },
+                                            text: Text::from_section(
+                                                format!("{}", idx + 1),
+                                                TextStyle {
+                                                    font_size: 20.0,
+                                                    color: Color::WHITE,
+                                                    ..default()
+                                                },
+                                            ),
+                                            ..default()
+                                        });
+                                        builder.spawn(TextBundle {
+                                            style: Style {
+                                                margin: UiRect::right(Val::Px(5.0)),
+                                                flex_grow: 0.0,
+                                                flex_shrink: 0.0,
+                                                ..default()
+                                            },
+                                            text: Text::from_section(
+                                                user_score.user.clone(),
+                                                TextStyle {
+                                                    font_size: 20.0,
+                                                    color: Color::WHITE,
+                                                    ..default()
+                                                },
+                                            ),
+                                            ..default()
+                                        });
+                                        builder.spawn(TextBundle {
+                                            style: Style {
+                                                margin: UiRect::left(Val::Auto),
+                                                padding: UiRect::right(Val::Px(20.0)),
+                                                ..default()
+                                            },
+                                            text: Text::from_section(
+                                                format!("{}", user_score.score),
+                                                TextStyle {
+                                                    font_size: 20.0,
+                                                    color: Color::WHITE,
+                                                    ..default()
+                                                },
+                                            ),
+                                            ..default()
+                                        });
+                                    });
+                            }
+                        });
+                }
+            }
+        }
+        _ => (),
+    }
+}
+
+#[derive(Serialize, Deserialize, Default)]
+pub struct UserLogin {
+    user: String,
+    pin: i64,
+}
+
+pub fn cleanup(
+    mut commands: Commands,
+    leaderboard_query: Query<Entity, With<Leaderboard>>,
+    login_form_query: Query<Entity, With<LoginForm>>,
+    login_text_query: Query<Entity, With<LoginText>>,
+) {
+    for entity in leaderboard_query
+        .iter()
+        .chain(login_form_query.iter())
+        .chain(login_text_query.iter())
+    {
+        if let Some(entity) = commands.get_entity(entity) {
+            entity.despawn_recursive();
+        }
+    }
+}
+
+fn handle_submit_button(
+    mut commands: Commands,
+    login_form_query: Query<Entity, With<LoginForm>>,
+    submit_button_query: Query<&Interaction, (Changed<Interaction>, With<Submit>)>,
+    username_button_query: Query<Entity, With<Username>>,
+    password_button_query: Query<&Password>,
+    children_query: Query<&Children>,
+    text_query: Query<&Text>,
+    editing_query: Query<Entity, With<Editing>>,
+    mut submit_executor: AsyncTaskRunner<Result<ehttp::Response, ehttp::Error>>,
+    mut login_data: ResMut<User>,
+) {
+    match submit_executor.poll() {
+        AsyncTaskStatus::Finished(result) => {
+            if let Ok(result) = result {
+                if let Ok(user) = serde_json::from_slice::<User>(&result.bytes) {
+                    // Despawn form
+                    for login_entity in login_form_query.iter() {
+                        if let Some(login_entity) = commands.get_entity(login_entity) {
+                            login_entity.despawn_recursive();
+                        }
+                    }
+
+                    // Write resource
+                    login_data.user = user.user;
+                    login_data.pin = user.pin;
+                    login_data.score = user.score;
+
+                    spawn_user_text(&mut commands, &login_data);
+                }
+            }
+        }
+        _ => (),
+    }
+
+    for button_interaction in submit_button_query.iter() {
+        match *button_interaction {
+            Interaction::Pressed => {
+                for editing_entity in editing_query.iter() {
+                    if let Some(mut editing_entity) = commands.get_entity(editing_entity) {
+                        editing_entity.remove::<Editing>();
+                    }
+
+                    let username_button = username_button_query.single();
+                    let password_button = password_button_query.single();
+                    let mut username = None;
+                    let mut password = None;
+                    for child in children_query.iter_descendants(username_button) {
+                        if let Ok(text) = text_query.get(child) {
+                            if text.sections[0].value.len() > 3 {
+                                username = Some(text.sections[0].value.clone());
+                            }
+                        }
+                    }
+
+                    if password_button.value.len() > 3 {
+                        password = Some(password_button.value.clone());
+                    }
+
+                    if let Some(username) = username {
+                        if let Some(password) = password {
+                            if let Ok(pin) = password.parse::<i64>() {
+                                let new_user = UserLogin {
+                                    user: username,
+                                    pin,
+                                };
+                                if let Ok(new_user) = serde_json::ser::to_vec(&new_user) {
+                                    let mut request = ehttp::Request::post(
+                                        "http://5.161.78.176:3000/user",
+                                        new_user,
+                                    );
+                                    request
+                                        .headers
+                                        .insert("Content-Type".into(), "application/json".into());
+                                    submit_executor.start(ehttp::fetch_async(request));
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            _ => (),
+        }
+    }
+}
+
+/// Spawn text with username/score
+fn spawn_user_text(commands: &mut Commands, login_data: &ResMut<User>) {
+    commands
+        .spawn((
+            NodeBundle {
+                style: Style {
+                    justify_self: JustifySelf::Start,
+                    align_self: AlignSelf::Center,
+                    flex_direction: FlexDirection::Column,
+                    margin: UiRect::left(Val::Px(20.0)),
+                    ..default()
+                },
+                ..default()
+            },
+            LoginText,
+        ))
+        .with_children(|builder| {
+            builder.spawn(TextBundle {
+                text: Text::from_section(
+                    format!("{}", login_data.user),
+                    TextStyle {
+                        font_size: 40.0,
+                        ..default()
+                    },
+                ),
+                style: Style { ..default() },
+                ..default()
+            });
+            builder.spawn(TextBundle {
+                text: Text::from_section(
+                    format!("{}", login_data.score),
+                    TextStyle {
+                        font_size: 40.0,
+                        ..default()
+                    },
+                ),
+                style: Style { ..default() },
+                ..default()
+            });
+        });
+}
+
+fn update_button_look(
+    mut button_query: Query<
+        (&mut BackgroundColor, &Interaction),
+        (Changed<Interaction>, With<Editable>),
+    >,
+    mut submit_button_query: Query<
+        (&mut BackgroundColor, &Interaction),
+        (Changed<Interaction>, With<Submit>, Without<Editable>),
+    >,
+) {
+    for (mut button_background, button_interaction) in button_query.iter_mut() {
+        match *button_interaction {
+            Interaction::Pressed => button_background.0 = Color::SILVER,
+            Interaction::Hovered => button_background.0 = Color::GRAY,
+            Interaction::None => button_background.0 = Color::DARK_GRAY,
+        }
+    }
+    for (mut button_background, button_interaction) in submit_button_query.iter_mut() {
+        match *button_interaction {
+            Interaction::Pressed => button_background.0 = Color::LIME_GREEN,
+            Interaction::Hovered => button_background.0 = Color::GREEN,
+            Interaction::None => button_background.0 = Color::DARK_GREEN,
+        }
+    }
+}
+
+fn update_text_edit_state(
+    mut commands: Commands,
+    button_query: Query<(Entity, &Interaction), (Changed<Interaction>, With<Editable>)>,
+    editing_query: Query<Entity, With<Editing>>,
+    input: Res<Input<KeyCode>>,
+) {
+    for (button_entity, button_interaction) in button_query.iter() {
+        match *button_interaction {
+            Interaction::Pressed => {
+                for editing_entity in editing_query.iter() {
+                    if let Some(mut editing_entity) = commands.get_entity(editing_entity) {
+                        editing_entity.remove::<Editing>();
+                    }
+                }
+
+                if let Some(mut text_entity) = commands.get_entity(button_entity) {
+                    text_entity.insert(Editing);
+                }
+            }
+            Interaction::Hovered => (),
+            Interaction::None => (),
+        }
+    }
+
+    if input.just_pressed(KeyCode::Escape) {
+        for editing_entity in editing_query.iter() {
+            if let Some(mut editing_entity) = commands.get_entity(editing_entity) {
+                editing_entity.remove::<Editing>();
+            }
+        }
+    }
+}
+
+fn listen_received_character_events(
+    mut events: EventReader<ReceivedCharacter>,
+    mut button_query: Query<(Entity, Option<&mut Password>), With<Editing>>,
+    mut text_query: Query<&mut Text>,
+    children_query: Query<&Children>,
+) {
+    for event in events.read() {
+        for (button_entity, password) in button_query.iter_mut() {
+            if password.is_none() {
+                for child in children_query.iter_descendants(button_entity) {
+                    if let Ok(mut text) = text_query.get_mut(child) {
+                        text.sections[0].value.push(event.char);
+                    }
+                }
+            } else if let Some(mut password) = password {
+                if event.char.is_digit(10) {
+                    password.value.push(event.char);
+                    for child in children_query.iter_descendants(button_entity) {
+                        if let Ok(mut text) = text_query.get_mut(child) {
+                            text.sections[0].value.push('*');
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+fn listen_keyboard_input_events(
+    mut events: EventReader<KeyboardInput>,
+    mut button_query: Query<(Entity, Option<&mut Password>), With<Editing>>,
+    mut text_query: Query<&mut Text>,
+    children_query: Query<&Children>,
+) {
+    for event in events.read() {
+        match event.key_code {
+            Some(KeyCode::Back) => {
+                for (button_entity, password) in button_query.iter_mut() {
+                    for child in children_query.iter_descendants(button_entity) {
+                        if let Ok(mut text) = text_query.get_mut(child) {
+                            text.sections[0].value.pop();
+                        }
+                    }
+                    if let Some(mut password) = password {
+                        password.value.pop();
+                    }
+                }
+            }
+            _ => continue,
+        }
+    }
+}
+
 pub fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
     // Spawn Music
     commands.spawn(AudioBundle {
@@ -38,23 +644,20 @@ pub fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
             )
             .with_alignment(TextAlignment::Center),
             style: Style {
-                justify_content: JustifyContent::SpaceEvenly,
-                align_items: AlignItems::Center,
-                top: Val::Percent(10.0),
-                left: Val::Percent(38.0),
-
+                top: Val::Vh(-30.0),
+                justify_self: JustifySelf::Center,
+                align_self: AlignSelf::Center,
                 ..default()
             },
             ..default()
         }
     });
 
-    // Spawn Menu Buttons
+    // Spawn Menu Button
     commands
         .spawn((
             NodeBundle {
                 style: Style {
-                    // bottom left button
                     width: Val::Percent(100.),
                     height: Val::Percent(100.),
                     justify_content: JustifyContent::Start,

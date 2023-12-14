@@ -7,6 +7,7 @@ mod main_menu;
 mod settings;
 use bevy_tweening::TweeningPlugin;
 use game_mod::*;
+use leaderboard::LeaderboardPlugin;
 use loading::LoadingTimer;
 use settings::*;
 
@@ -22,13 +23,13 @@ fn main() {
         .add_plugins((
             DefaultPlugins.set(ImagePlugin::default_nearest()),
             TweeningPlugin,
+            LeaderboardPlugin,
         ))
         .init_resource::<GameData>()
         .init_resource::<GameSettings>()
         .init_resource::<PlayerData>()
         .init_resource::<Handles>()
         .init_resource::<Villagers>()
-        .init_resource::<VillagersGame>()
         .add_state::<AppState>()
         .add_systems(Startup, startup)
         .add_systems(
@@ -98,7 +99,10 @@ fn main() {
         })
         .add_systems(OnEnter(AppState::MainMenu), main_menu::setup_menu)
         .add_systems(OnEnter(AppState::LoadingScreen), loading::setup_loading)
-        .add_systems(OnEnter(AppState::Leaderboard), leaderboard::setup_ui)
+        .add_systems(
+            OnEnter(AppState::Leaderboard),
+            (leaderboard::setup_ui, leaderboard::setup_scene),
+        )
         .add_systems(
             OnEnter(AppState::Settings),
             (
@@ -125,7 +129,10 @@ fn main() {
         .add_systems(OnExit(AppState::MainMenu), main_menu::clear_shapes)
         .add_systems(OnExit(AppState::LoadingScreen), loading::clear_shapes)
         .add_systems(OnExit(AppState::HowToPlay), how_to_play::clear_shapes)
-        .add_systems(OnExit(AppState::Leaderboard), leaderboard::clear_shapes)
+        .add_systems(
+            OnExit(AppState::Leaderboard),
+            (leaderboard::cleanup, leaderboard::clear_shapes).chain(),
+        )
         .add_systems(OnExit(AppState::Settings), settings::clear_shapes)
         .run();
 }

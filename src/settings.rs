@@ -46,23 +46,73 @@ impl Default for GameSettings {
 
 #[derive(Resource)]
 pub struct Villagers {
-    pub villagers: Vec<(String, bool, i32)>,
+    pub villagers: Vec<(String, String, bool, i32)>,
 }
 
 impl Default for Villagers {
     fn default() -> Self {
         Self {
             villagers: vec![
-                ("characters/baker.png".to_string(), false, 6),
-                ("characters/bug_collector.png".to_string(), false, 11),
-                ("characters/traveler.png".to_string(), false, 21),
-                ("characters/farmer.png".to_string(), false, 31),
-                ("characters/gardener.png".to_string(), false, 41),
-                ("characters/librarian.png".to_string(), false, 51),
-                ("characters/merchant.png".to_string(), false, 61),
-                ("characters/penguin.png".to_string(), false, 81),
-                ("characters/student.png".to_string(), false, 91),
-                ("characters/cat.png".to_string(), false, 101),
+                (
+                    "characters/baker.png".to_string(),
+                    "characters/baker_solo.png".to_string(),
+                    false,
+                    6,
+                ),
+                (
+                    "characters/bug_collector.png".to_string(),
+                    "characters/bug_collector_solo.png".to_string(),
+                    false,
+                    11,
+                ),
+                (
+                    "characters/traveler.png".to_string(),
+                    "characters/traveler_solo.png".to_string(),
+                    false,
+                    21,
+                ),
+                (
+                    "characters/farmer.png".to_string(),
+                    "characters/farmer_solo.png".to_string(),
+                    false,
+                    31,
+                ),
+                (
+                    "characters/gardener.png".to_string(),
+                    "characters/gardener_solo.png".to_string(),
+                    false,
+                    41,
+                ),
+                (
+                    "characters/librarian.png".to_string(),
+                    "characters/librarian_solo.png".to_string(),
+                    false,
+                    51,
+                ),
+                (
+                    "characters/merchant.png".to_string(),
+                    "characters/merchant_solo.png".to_string(),
+                    false,
+                    61,
+                ),
+                (
+                    "characters/penguin.png".to_string(),
+                    "characters/penguin_solo.png".to_string(),
+                    false,
+                    81,
+                ),
+                (
+                    "characters/student.png".to_string(),
+                    "characters/student_solo.png".to_string(),
+                    false,
+                    91,
+                ),
+                (
+                    "characters/cat.png".to_string(),
+                    "characters/cat_solo.png".to_string(),
+                    false,
+                    101,
+                ),
             ],
         }
     }
@@ -93,9 +143,9 @@ pub fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
             )
             .with_alignment(TextAlignment::Center),
             style: Style {
-                top: Val::Percent(10.0),
-                left: Val::Percent(42.0),
-
+                top: Val::Vh(-30.0),
+                justify_self: JustifySelf::Center,
+                align_self: AlignSelf::Center,
                 ..default()
             },
             ..default()
@@ -103,8 +153,8 @@ pub fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
     });
     // Spawn Subtitle Text
     let title = format!(
-        "       Select the type of fruit you see in game. 
-        Light green is Fruit A, light blue is Fruit B."
+        "Select the type of fruit you see in game.
+Light green is Fruit A, light blue is Fruit B."
     );
     let font = asset_server.load("fonts/Leila-Regular.ttf");
     commands.spawn({
@@ -119,8 +169,9 @@ pub fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
             )
             .with_alignment(TextAlignment::Center),
             style: Style {
-                top: Val::Percent(28.0),
-                left: Val::Percent(18.0),
+                top: Val::Vh(-20.0),
+                justify_self: JustifySelf::Center,
+                align_self: AlignSelf::Center,
                 ..default()
             },
             ..default()
@@ -335,48 +386,51 @@ pub fn spawn_chibi(
     let columns = 10;
     let rows = 1;
 
+    // Spawn Villager Title
+    let title = format!("Villagers Unlocked");
+    let font = asset_server.load("fonts/Leila-Regular.ttf");
     commands
-        .spawn((
-            NodeBundle {
-                style: Style {
-                    // Use the CSS Grid algorithm for laying out this node
-                    display: Display::Grid,
-                    // Make node fill the entirety it's parent (in this case the window)
-                    width: Val::Percent(30.0),
-                    height: Val::Percent(30.0),
-                    // center the node vertically and horizontally within the window
-                    position_type: PositionType::Relative,
-                    top: Val::Px(450.0),
-                    left: Val::Px(10.0),
-                    ..default()
-                },
+        .spawn(NodeBundle {
+            style: Style {
+                // horizontally center child text
+                justify_self: JustifySelf::Center,
+                // vertically center child text
+                align_self: AlignSelf::Center,
+                flex_direction: FlexDirection::Column,
                 ..default()
             },
-            GridIdentifier::Grid,
-        ))
-        .with_children(|builder| {
-            builder
+            ..default()
+        })
+        .with_children(|parent| {
+            parent.spawn({
+                TextBundle {
+                    text: Text::from_section(
+                        title,
+                        TextStyle {
+                            font,
+                            font_size: 32.0,
+                            color: OLIVE_GREEN,
+                        },
+                    )
+                    .with_alignment(TextAlignment::Center),
+                    style: Style {
+                        top: Val::Vh(10.0),
+                        justify_self: JustifySelf::Center,
+                        align_self: AlignSelf::Center,
+                        ..default()
+                    },
+                    ..default()
+                }
+            });
+
+            // Spawn Villager Grid
+            parent
                 .spawn((
                     NodeBundle {
                         style: Style {
-                            // Make the height of the node fill its parent
-                            height: Val::Percent(100.0),
-                            // Make the grid have a 1:1 aspect ratio meaning it will scale as an exact square
-                            // As the height is set explicitly, this means the width will adjust to match the height
-                            aspect_ratio: Some(1.0),
-                            // Use grid layout for this node
+                            // Use the CSS Grid algorithm for laying out this node
                             display: Display::Grid,
-                            // Add 24px of padding around the grid
-                            padding: UiRect::all(Val::Px(24.0)),
-                            // Set the grid to have 10 columns all with sizes minmax(0, 1fr)
-                            // This creates 10 exactly evenly sized columns
-                            grid_template_columns: RepeatedGridTrack::flex(columns, 1.0),
-                            // Set the grid to have 1 rows all with sizes minmax(0, 1fr)
-                            // This creates 1 exactly evenly sized rows
-                            grid_template_rows: RepeatedGridTrack::flex(rows, 1.0),
-                            // Set a 12px gap/gutter between rows and columns
-                            column_gap: Val::Px(122.0),
-                            //left: Val::Px(10.0),
+                            top: Val::Vh(20.0),
                             ..default()
                         },
                         ..default()
@@ -384,288 +438,337 @@ pub fn spawn_chibi(
                     GridIdentifier::Grid,
                 ))
                 .with_children(|builder| {
-                    for (index, villager) in villagers.villagers.iter().enumerate() {
-                        item_rect(
-                            builder,
-                            &asset_server,
-                            villager.0.clone(),
-                            villager.1.clone(),
-                            index % 2 == 0,
-                        );
-                    }
+                    builder
+                        .spawn((
+                            NodeBundle {
+                                style: Style {
+                                    height: Val::Px(125.0),
+                                    width: Val::Vw(80.0),
+                                    // Make the grid have a 1:1 aspect ratio meaning it will scale as an exact square
+                                    // As the height is set explicitly, this means the width will adjust to match the height
+                                    aspect_ratio: Some(1.0),
+                                    // Use grid layout for this node
+                                    display: Display::Grid,
+                                    // Set the grid to have 10 columns all with sizes minmax(0, 1fr)
+                                    // This creates 10 exactly evenly sized columns
+                                    grid_template_columns: RepeatedGridTrack::flex(columns, 1.0),
+                                    // Set the grid to have 1 rows all with sizes minmax(0, 1fr)
+                                    // This creates 1 exactly evenly sized rows
+                                    grid_template_rows: RepeatedGridTrack::flex(rows, 1.0),
+                                    justify_self: JustifySelf::Center,
+                                    align_self: AlignSelf::Center,
+                                    ..default()
+                                },
+                                ..default()
+                            },
+                            GridIdentifier::Grid,
+                        ))
+                        .with_children(|builder| {
+                            for (index, villager) in villagers.villagers.iter().enumerate() {
+                                item_rect(
+                                    builder,
+                                    &asset_server,
+                                    villager.0.clone(),
+                                    villager.2.clone(),
+                                    index % 2 == 0,
+                                );
+                            }
+                        });
                 });
         });
 }
 
 pub fn spawn_fruit(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands
-        .spawn((
-            NodeBundle {
-                style: Style {
-                    // bottom left button
-                    width: Val::Percent(100.),
-                    height: Val::Percent(100.),
-                    top: Val::Percent(40.0),
-                    left: Val::Percent(15.0),
-                    ..default()
-                },
+        .spawn(NodeBundle {
+            style: Style {
+                // horizontally center child text
+                justify_self: JustifySelf::Center,
+                // vertically center child text
+                align_self: AlignSelf::Center,
+                top: Val::Vh(-10.0),
                 ..default()
             },
-            FruitType::Apple,
-        ))
+            ..default()
+        })
         .with_children(|parent| {
             parent
                 .spawn((
-                    ButtonBundle {
+                    NodeBundle {
                         style: Style {
-                            width: Val::Px(150.),
-                            height: Val::Px(65.),
-                            // horizontally center child text
-                            justify_content: JustifyContent::Center,
-                            // vertically center child text
-                            align_items: AlignItems::Center,
-                            // center the node vertically and horizontally within the window
-                            position_type: PositionType::Relative,
-                            left: Val::Px(100.0),
-                            border: UiRect {
-                                top: Val::Px(4.),
-                                left: Val::Px(4.),
-                                bottom: Val::Px(4.),
-                                right: Val::Px(4.),
-                            },
+                            width: Val::Percent(100.),
+                            height: Val::Percent(100.),
                             ..default()
                         },
-                        background_color: Color::BISQUE.into(),
                         ..default()
                     },
                     FruitType::Apple,
                 ))
                 .with_children(|parent| {
-                    parent.spawn((
-                        ImageBundle {
-                            image: UiImage {
-                                texture: asset_server.load("icons/apple.png"),
+                    parent
+                        .spawn((
+                            ButtonBundle {
+                                style: Style {
+                                    width: Val::Px(150.),
+                                    height: Val::Px(65.),
+                                    // horizontally center child text
+                                    justify_content: JustifyContent::Center,
+                                    // vertically center child text
+                                    align_items: AlignItems::Center,
+                                    // center the node vertically and horizontally within the window
+                                    position_type: PositionType::Relative,
+                                    border: UiRect {
+                                        top: Val::Px(4.),
+                                        left: Val::Px(4.),
+                                        bottom: Val::Px(4.),
+                                        right: Val::Px(4.),
+                                    },
+                                    margin: UiRect {
+                                        left: Val::Px(30.0),
+                                        right: Val::Px(30.0),
+                                        ..default()
+                                    },
+                                    ..default()
+                                },
+                                background_color: Color::BISQUE.into(),
                                 ..default()
                             },
-                            ..default()
-                        },
-                        FruitType::Apple,
-                        Animator::new(
-                            Tween::new(
-                                EaseFunction::CubicInOut,
-                                Duration::from_millis(500),
-                                TransformRotationLens {
-                                    start: Quat::from_rotation_z(10_f32.to_radians()),
-                                    end: Quat::from_rotation_z(350_f32.to_radians()),
+                            FruitType::Apple,
+                        ))
+                        .with_children(|parent| {
+                            parent.spawn((
+                                ImageBundle {
+                                    image: UiImage {
+                                        texture: asset_server.load("icons/apple.png"),
+                                        ..default()
+                                    },
+                                    ..default()
                                 },
-                            )
-                            .with_repeat_strategy(RepeatStrategy::MirroredRepeat)
-                            .with_repeat_count(RepeatCount::Infinite),
-                        ),
-                    ));
+                                FruitType::Apple,
+                                Animator::new(
+                                    Tween::new(
+                                        EaseFunction::CubicInOut,
+                                        Duration::from_millis(500),
+                                        TransformRotationLens {
+                                            start: Quat::from_rotation_z(10_f32.to_radians()),
+                                            end: Quat::from_rotation_z(350_f32.to_radians()),
+                                        },
+                                    )
+                                    .with_repeat_strategy(RepeatStrategy::MirroredRepeat)
+                                    .with_repeat_count(RepeatCount::Infinite),
+                                ),
+                            ));
+                        });
                 });
-        });
 
-    commands
-        .spawn((
-            NodeBundle {
-                style: Style {
-                    // bottom right button
-                    width: Val::Percent(100.),
-                    height: Val::Percent(100.),
-                    top: Val::Percent(40.0),
-                    left: Val::Percent(30.0),
-                    ..default()
-                },
-                ..default()
-            },
-            FruitType::Pear,
-        ))
-        .with_children(|parent| {
             parent
                 .spawn((
-                    ButtonBundle {
+                    NodeBundle {
                         style: Style {
-                            width: Val::Px(150.),
-                            height: Val::Px(65.),
-                            // horizontally center child text
-                            justify_content: JustifyContent::Center,
-                            // vertically center child text
-                            align_items: AlignItems::Center,
-                            // center the node vertically and horizontally within the window
-                            position_type: PositionType::Relative,
-                            left: Val::Px(100.0),
-                            border: UiRect {
-                                top: Val::Px(4.),
-                                left: Val::Px(4.),
-                                bottom: Val::Px(4.),
-                                right: Val::Px(4.),
-                            },
+                            // bottom right button
+                            width: Val::Percent(100.),
+                            height: Val::Percent(100.),
                             ..default()
                         },
-                        background_color: Color::BISQUE.into(),
                         ..default()
                     },
                     FruitType::Pear,
                 ))
                 .with_children(|parent| {
-                    parent.spawn((
-                        ImageBundle {
-                            image: UiImage {
-                                texture: asset_server.load("icons/pear.png"),
+                    parent
+                        .spawn((
+                            ButtonBundle {
+                                style: Style {
+                                    width: Val::Px(150.),
+                                    height: Val::Px(65.),
+                                    // horizontally center child text
+                                    justify_content: JustifyContent::Center,
+                                    // vertically center child text
+                                    align_items: AlignItems::Center,
+                                    // center the node vertically and horizontally within the window
+                                    position_type: PositionType::Relative,
+                                    border: UiRect {
+                                        top: Val::Px(4.),
+                                        left: Val::Px(4.),
+                                        bottom: Val::Px(4.),
+                                        right: Val::Px(4.),
+                                    },
+                                    margin: UiRect {
+                                        left: Val::Px(30.0),
+                                        right: Val::Px(30.0),
+                                        ..default()
+                                    },
+                                    ..default()
+                                },
+                                background_color: Color::BISQUE.into(),
                                 ..default()
                             },
-                            ..default()
-                        },
-                        FruitType::Pear,
-                        Animator::new(
-                            Tween::new(
-                                EaseFunction::CubicInOut,
-                                Duration::from_millis(500),
-                                TransformRotationLens {
-                                    start: Quat::from_rotation_z(10_f32.to_radians()),
-                                    end: Quat::from_rotation_z(350_f32.to_radians()),
+                            FruitType::Pear,
+                        ))
+                        .with_children(|parent| {
+                            parent.spawn((
+                                ImageBundle {
+                                    image: UiImage {
+                                        texture: asset_server.load("icons/pear.png"),
+                                        ..default()
+                                    },
+                                    ..default()
                                 },
-                            )
-                            .with_repeat_strategy(RepeatStrategy::MirroredRepeat)
-                            .with_repeat_count(RepeatCount::Infinite),
-                        ),
-                    ));
+                                FruitType::Pear,
+                                Animator::new(
+                                    Tween::new(
+                                        EaseFunction::CubicInOut,
+                                        Duration::from_millis(500),
+                                        TransformRotationLens {
+                                            start: Quat::from_rotation_z(10_f32.to_radians()),
+                                            end: Quat::from_rotation_z(350_f32.to_radians()),
+                                        },
+                                    )
+                                    .with_repeat_strategy(RepeatStrategy::MirroredRepeat)
+                                    .with_repeat_count(RepeatCount::Infinite),
+                                ),
+                            ));
+                        });
                 });
-        });
 
-    commands
-        .spawn((
-            NodeBundle {
-                style: Style {
-                    // bottom left button
-                    width: Val::Percent(100.),
-                    height: Val::Percent(100.),
-                    top: Val::Percent(40.0),
-                    left: Val::Percent(45.0),
-                    ..default()
-                },
-                ..default()
-            },
-            FruitType::Orange,
-        ))
-        .with_children(|parent| {
             parent
                 .spawn((
-                    ButtonBundle {
+                    NodeBundle {
                         style: Style {
-                            width: Val::Px(150.),
-                            height: Val::Px(65.),
-                            // horizontally center child text
-                            justify_content: JustifyContent::Center,
-                            // vertically center child text
-                            align_items: AlignItems::Center,
-                            // center the node vertically and horizontally within the window
-                            position_type: PositionType::Relative,
-                            left: Val::Px(100.0),
-                            border: UiRect {
-                                top: Val::Px(4.),
-                                left: Val::Px(4.),
-                                bottom: Val::Px(4.),
-                                right: Val::Px(4.),
-                            },
+                            // bottom left button
+                            width: Val::Percent(100.),
+                            height: Val::Percent(100.),
                             ..default()
                         },
-                        background_color: Color::BISQUE.into(),
                         ..default()
                     },
                     FruitType::Orange,
                 ))
                 .with_children(|parent| {
-                    parent.spawn((
-                        ImageBundle {
-                            image: UiImage {
-                                texture: asset_server.load("icons/orange.png"),
+                    parent
+                        .spawn((
+                            ButtonBundle {
+                                style: Style {
+                                    width: Val::Px(150.),
+                                    height: Val::Px(65.),
+                                    // horizontally center child text
+                                    justify_content: JustifyContent::Center,
+                                    // vertically center child text
+                                    align_items: AlignItems::Center,
+                                    // center the node vertically and horizontally within the window
+                                    position_type: PositionType::Relative,
+                                    border: UiRect {
+                                        top: Val::Px(4.),
+                                        left: Val::Px(4.),
+                                        bottom: Val::Px(4.),
+                                        right: Val::Px(4.),
+                                    },
+                                    margin: UiRect {
+                                        left: Val::Px(30.0),
+                                        right: Val::Px(30.0),
+                                        ..default()
+                                    },
+                                    ..default()
+                                },
+                                background_color: Color::BISQUE.into(),
                                 ..default()
                             },
-                            ..default()
-                        },
-                        FruitType::Orange,
-                        Animator::new(
-                            Tween::new(
-                                EaseFunction::CubicInOut,
-                                Duration::from_millis(500),
-                                TransformRotationLens {
-                                    start: Quat::from_rotation_z(10_f32.to_radians()),
-                                    end: Quat::from_rotation_z(350_f32.to_radians()),
+                            FruitType::Orange,
+                        ))
+                        .with_children(|parent| {
+                            parent.spawn((
+                                ImageBundle {
+                                    image: UiImage {
+                                        texture: asset_server.load("icons/orange.png"),
+                                        ..default()
+                                    },
+                                    ..default()
                                 },
-                            )
-                            .with_repeat_strategy(RepeatStrategy::MirroredRepeat)
-                            .with_repeat_count(RepeatCount::Infinite),
-                        ),
-                    ));
+                                FruitType::Orange,
+                                Animator::new(
+                                    Tween::new(
+                                        EaseFunction::CubicInOut,
+                                        Duration::from_millis(500),
+                                        TransformRotationLens {
+                                            start: Quat::from_rotation_z(10_f32.to_radians()),
+                                            end: Quat::from_rotation_z(350_f32.to_radians()),
+                                        },
+                                    )
+                                    .with_repeat_strategy(RepeatStrategy::MirroredRepeat)
+                                    .with_repeat_count(RepeatCount::Infinite),
+                                ),
+                            ));
+                        });
                 });
-        });
-    commands
-        .spawn((
-            NodeBundle {
-                style: Style {
-                    // bottom left button
-                    width: Val::Percent(100.),
-                    height: Val::Percent(100.),
-                    top: Val::Percent(40.0),
-                    left: Val::Percent(60.0),
-                    ..default()
-                },
-                ..default()
-            },
-            FruitType::Strawberry,
-        ))
-        .with_children(|parent| {
             parent
                 .spawn((
-                    ButtonBundle {
+                    NodeBundle {
                         style: Style {
-                            width: Val::Px(150.),
-                            height: Val::Px(65.),
-                            // horizontally center child text
-                            justify_content: JustifyContent::Center,
-                            // vertically center child text
-                            align_items: AlignItems::Center,
-                            // center the node vertically and horizontally within the window
-                            position_type: PositionType::Relative,
-                            left: Val::Px(100.0),
-                            border: UiRect {
-                                top: Val::Px(4.),
-                                left: Val::Px(4.),
-                                bottom: Val::Px(4.),
-                                right: Val::Px(4.),
-                            },
+                            // bottom left button
+                            width: Val::Percent(100.),
+                            height: Val::Percent(100.),
                             ..default()
                         },
-                        background_color: Color::BISQUE.into(),
                         ..default()
                     },
                     FruitType::Strawberry,
                 ))
                 .with_children(|parent| {
-                    parent.spawn((
-                        ImageBundle {
-                            image: UiImage {
-                                texture: asset_server.load("icons/strawberry.png"),
+                    parent
+                        .spawn((
+                            ButtonBundle {
+                                style: Style {
+                                    width: Val::Px(150.),
+                                    height: Val::Px(65.),
+                                    // horizontally center child text
+                                    justify_content: JustifyContent::Center,
+                                    // vertically center child text
+                                    align_items: AlignItems::Center,
+                                    // center the node vertically and horizontally within the window
+                                    position_type: PositionType::Relative,
+                                    margin: UiRect {
+                                        left: Val::Px(30.0),
+                                        right: Val::Px(30.0),
+                                        ..default()
+                                    },
+                                    border: UiRect {
+                                        top: Val::Px(4.),
+                                        left: Val::Px(4.),
+                                        bottom: Val::Px(4.),
+                                        right: Val::Px(4.),
+                                    },
+
+                                    ..default()
+                                },
+                                background_color: Color::BISQUE.into(),
                                 ..default()
                             },
-                            ..default()
-                        },
-                        FruitType::Strawberry,
-                        Animator::new(
-                            Tween::new(
-                                EaseFunction::CubicInOut,
-                                Duration::from_millis(500),
-                                TransformRotationLens {
-                                    start: Quat::from_rotation_z(10_f32.to_radians()),
-                                    end: Quat::from_rotation_z(350_f32.to_radians()),
+                            FruitType::Strawberry,
+                        ))
+                        .with_children(|parent| {
+                            parent.spawn((
+                                ImageBundle {
+                                    image: UiImage {
+                                        texture: asset_server.load("icons/strawberry.png"),
+                                        ..default()
+                                    },
+                                    ..default()
                                 },
-                            )
-                            .with_repeat_strategy(RepeatStrategy::MirroredRepeat)
-                            .with_repeat_count(RepeatCount::Infinite),
-                        ),
-                    ));
+                                FruitType::Strawberry,
+                                Animator::new(
+                                    Tween::new(
+                                        EaseFunction::CubicInOut,
+                                        Duration::from_millis(500),
+                                        TransformRotationLens {
+                                            start: Quat::from_rotation_z(10_f32.to_radians()),
+                                            end: Quat::from_rotation_z(350_f32.to_radians()),
+                                        },
+                                    )
+                                    .with_repeat_strategy(RepeatStrategy::MirroredRepeat)
+                                    .with_repeat_count(RepeatCount::Infinite),
+                                ),
+                            ));
+                        });
                 });
         });
 }
@@ -717,7 +820,8 @@ fn item_rect(
             NodeBundle {
                 style: Style {
                     display: Display::Grid,
-                    padding: UiRect::all(Val::Px(3.0)),
+                    justify_self: JustifySelf::Center,
+                    align_self: AlignSelf::Center,
                     ..default()
                 },
                 ..default()

@@ -10,8 +10,9 @@ use rand::Rng;
 use std::time::Duration;
 
 use crate::{
+    leaderboard::UpdateRoundEvent,
     main_menu::{SoundEffect, BASIL_GREEN, OLIVE_GREEN},
-    settings::GameSettings,
+    settings::{GameSettings, Villagers},
     AppState,
 };
 
@@ -89,30 +90,6 @@ pub enum GridIdentifier {
 #[derive(Component)]
 pub struct RoundTimer;
 
-#[derive(Resource)]
-pub struct VillagersGame {
-    pub villagers: Vec<(String, bool, i32)>,
-}
-
-impl Default for VillagersGame {
-    fn default() -> Self {
-        Self {
-            villagers: vec![
-                ("characters/baker_solo.png".to_string(), false, 6),
-                ("characters/bug_collector_solo.png".to_string(), false, 11),
-                ("characters/traveler_solo.png".to_string(), false, 21),
-                ("characters/farmer_solo.png".to_string(), false, 31),
-                ("characters/gardener_solo.png".to_string(), false, 41),
-                ("characters/librarian_solo.png".to_string(), false, 51),
-                ("characters/merchant_solo.png".to_string(), false, 61),
-                ("characters/penguin_solo.png".to_string(), false, 81),
-                ("characters/student_solo.png".to_string(), false, 91),
-                ("characters/cat_solo.png".to_string(), false, 101),
-            ],
-        }
-    }
-}
-
 pub fn play_game(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
@@ -144,10 +121,9 @@ pub fn play_game(
             )
             .with_alignment(TextAlignment::Center),
             style: Style {
-                position_type: PositionType::Relative,
-                top: Val::Percent(10.0),
-                left: Val::Percent(46.0),
-
+                top: Val::Vh(-30.0),
+                justify_self: JustifySelf::Center,
+                align_self: AlignSelf::Center,
                 ..default()
             },
             ..default()
@@ -235,7 +211,7 @@ pub fn play_game(
 pub fn spawn_chibi_game(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
-    villagers: Res<VillagersGame>,
+    villagers: Res<Villagers>,
 ) {
     let columns = 10;
     let rows = 1;
@@ -246,13 +222,9 @@ pub fn spawn_chibi_game(
                 style: Style {
                     // Use the CSS Grid algorithm for laying out this node
                     display: Display::Grid,
-                    // Make node fill the entirety it's parent (in this case the window)
-                    width: Val::Percent(30.0),
-                    height: Val::Percent(30.0),
-                    // center the node vertically and horizontally within the window
-                    position_type: PositionType::Relative,
-                    top: Val::Px(450.0),
-                    left: Val::Px(10.0),
+                    top: Val::Vh(70.0),
+                    width: Val::Vw(30.0),
+                    left: Val::Vw(10.0),
                     ..default()
                 },
                 ..default()
@@ -264,24 +236,21 @@ pub fn spawn_chibi_game(
                 .spawn((
                     NodeBundle {
                         style: Style {
-                            // Make the height of the node fill its parent
-                            height: Val::Percent(100.0),
+                            height: Val::Px(125.0),
+                            width: Val::Vw(80.0),
                             // Make the grid have a 1:1 aspect ratio meaning it will scale as an exact square
                             // As the height is set explicitly, this means the width will adjust to match the height
                             aspect_ratio: Some(1.0),
                             // Use grid layout for this node
                             display: Display::Grid,
-                            // Add 24px of padding around the grid
-                            padding: UiRect::all(Val::Px(24.0)),
                             // Set the grid to have 10 columns all with sizes minmax(0, 1fr)
                             // This creates 10 exactly evenly sized columns
                             grid_template_columns: RepeatedGridTrack::flex(columns, 1.0),
                             // Set the grid to have 1 rows all with sizes minmax(0, 1fr)
                             // This creates 1 exactly evenly sized rows
                             grid_template_rows: RepeatedGridTrack::flex(rows, 1.0),
-                            // Set a 12px gap/gutter between rows and columns
-                            column_gap: Val::Px(122.0),
-                            //left: Val::Px(10.0),
+                            justify_self: JustifySelf::Center,
+                            align_self: AlignSelf::Center,
                             ..default()
                         },
                         ..default()
@@ -293,8 +262,8 @@ pub fn spawn_chibi_game(
                         item_rect_villager(
                             builder,
                             &asset_server,
-                            villager.0.clone(),
                             villager.1.clone(),
+                            villager.2.clone(),
                             index % 2 == 0,
                         );
                     }
@@ -392,7 +361,7 @@ fn process_guess(
     asset_server: &Res<AssetServer>,
     commands: &mut Commands,
     game_data: &mut ResMut<GameData>,
-    villagers: &Res<VillagersGame>,
+    villagers: &Res<Villagers>,
 ) -> bool {
     let font = asset_server.load("fonts/Leila-Regular.ttf");
     if (guess.trim() == "x" && exes > os) || (guess.trim() == "o" && os > exes) {
@@ -449,8 +418,8 @@ fn process_guess(
             )),
         ));
         for villager in villagers.villagers.iter() {
-            let level_unlockable = villager.2;
-            let status = villager.1;
+            let level_unlockable = villager.3;
+            let status = villager.2;
             if (game_data.level == level_unlockable) && status == false {
                 commands.spawn((
                     AudioBundle {
@@ -699,7 +668,7 @@ pub fn interact_button(
     mut commands: Commands,
     keyboard_input: Res<Input<KeyCode>>,
     mut timer: ResMut<PauseTimer>,
-    villagers: Res<VillagersGame>,
+    villagers: Res<Villagers>,
 ) {
     // Keyboard Input
     // Escape to Main Menu
@@ -816,16 +785,16 @@ pub fn show_results(
     mut timer: ResMut<ResultTimer>,
     mut next_state: ResMut<NextState<AppState>>,
     game_data: ResMut<GameData>,
-    mut villagers: ResMut<VillagersGame>,
+    mut villagers: ResMut<Villagers>,
 ) {
     timer.result_timer.tick(time.delta());
     if timer.result_timer.finished() {
         match game_data.result {
             Result::Correct => {
                 for villager in villagers.villagers.iter_mut() {
-                    let level_unlockable = villager.2;
+                    let level_unlockable = villager.3;
                     if game_data.level == level_unlockable {
-                        villager.1 = true;
+                        villager.2 = true;
                     }
                 }
                 next_state.set(AppState::StartRound);
@@ -864,7 +833,11 @@ pub fn pause(
     }
 }
 
-pub fn upload_score(game_data: ResMut<GameData>, mut player_data: ResMut<PlayerData>) {
+pub fn upload_score(
+    game_data: ResMut<GameData>,
+    mut player_data: ResMut<PlayerData>,
+    mut round_event: EventWriter<UpdateRoundEvent>,
+) {
     player_data.username = "sampleName".into();
     player_data.pin = 1234;
     player_data.level_reached = game_data.level;
@@ -874,6 +847,10 @@ pub fn upload_score(game_data: ResMut<GameData>, mut player_data: ResMut<PlayerD
         "{} {} {} {:?}",
         player_data.username, player_data.pin, player_data.level_reached, player_data.speed
     );
+
+    round_event.send(UpdateRoundEvent {
+        round: game_data.level.into(),
+    });
 }
 
 pub fn clear_shapes(
@@ -989,7 +966,8 @@ fn item_rect_villager(
             NodeBundle {
                 style: Style {
                     display: Display::Grid,
-                    padding: UiRect::all(Val::Px(3.0)),
+                    justify_self: JustifySelf::Center,
+                    align_self: AlignSelf::Center,
                     ..default()
                 },
                 ..default()
