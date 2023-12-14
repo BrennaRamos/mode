@@ -1,8 +1,8 @@
+use crate::loading::AnimationIndices;
 use crate::settings::GameSettings;
 use crate::{game_mod, AppState};
 use bevy::audio::{PlaybackMode, Volume};
-use bevy::render::color::*;
-use bevy::{core_pipeline::clear_color::ClearColorConfig, prelude::*};
+use bevy::prelude::*;
 
 pub const OLIVE_GREEN: Color = Color::rgb(82.0 / 255.0, 88.0 / 255.0, 32.0 / 255.0);
 pub const BASIL_GREEN: Color = Color::rgb(166.0 / 255.0, 179.0 / 255.0, 64.0 / 255.0);
@@ -14,13 +14,7 @@ pub enum ActionButton {
     Leaderboard,
     HowToPlay,
     Settings,
-    Quit,
-}
-
-#[derive(Component)]
-pub struct AnimationIndices {
-    first: usize,
-    last: usize,
+    // Quit,
 }
 
 #[derive(Component)]
@@ -32,14 +26,8 @@ pub struct AnimationTimer(Timer);
 pub fn setup_menu(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
-    camera_query: Query<Entity, With<Camera2d>>,
     mut texture_atlases: ResMut<Assets<TextureAtlas>>,
 ) {
-    for entity in camera_query.iter() {
-        if let Some(entity) = commands.get_entity(entity) {
-            entity.despawn_recursive();
-        }
-    }
     // Spawn Music
     commands.spawn(AudioBundle {
         source: asset_server.load("music/Dandelions.ogg"),
@@ -50,59 +38,24 @@ pub fn setup_menu(
         ..default()
     });
 
-    // Spawn Camera in Foreground
-    commands.spawn(Camera2dBundle {
-        camera_2d: Camera2d {
-            clear_color: ClearColorConfig::Custom(Color::BISQUE),
-        },
-        transform: Transform::from_translation(Vec3::new(0.0, 0.0, 5.0)),
-        ..default()
-    });
-    commands.spawn(SpriteBundle {
-        texture: asset_server.load("background/background.png"),
-        transform: Transform::from_translation(Vec3::new(0.0, 0.0, -1.0)),
-        ..default()
-    });
     // Spawn Menu Title
     let texture_handle = asset_server.load("icons/Title.png");
     let texture_atlas =
         TextureAtlas::from_grid(texture_handle, Vec2::new(960.0, 540.0), 6, 1, None, None);
     let texture_atlas_handle = texture_atlases.add(texture_atlas);
     // Use only the subset of sprites in the sheet that make up the run animation
-    let animation_indices = AnimationIndices { first: 1, last: 5 };
+    let animation_indices = AnimationIndices { first: 0, last: 5 };
     commands.spawn((
         SpriteSheetBundle {
             texture_atlas: texture_atlas_handle,
             sprite: TextureAtlasSprite::new(animation_indices.first),
-            transform: Transform::from_translation(Vec3::new(50.0, 150.0, 0.0)),
+            transform: Transform::from_translation(Vec3::new(50.0, 150.0, 1.0)),
             ..default()
         },
         animation_indices,
         AnimationTimer(Timer::from_seconds(0.5, TimerMode::Repeating)),
     ));
-    // let title = format!("Odemay");
-    // let font = asset_server.load("fonts/Leila-Regular.ttf");
-    // commands.spawn({
-    //     TextBundle {
-    //         text: Text::from_section(
-    //             title,
-    //             TextStyle {
-    //                 font,
-    //                 font_size: 64.0,
-    //                 color: OLIVE_GREEN,
-    //             },
-    //         )
-    //         .with_alignment(TextAlignment::Center),
-    //         style: Style {
-    //             position_type: PositionType::Relative,
-    //             top: Val::Percent(10.0),
-    //             left: Val::Percent(46.0),
 
-    //             ..default()
-    //         },
-    //         ..default()
-    //     }
-    // });
     // Spawn Menu Buttons
     commands
         .spawn((
@@ -275,44 +228,6 @@ pub fn setup_menu(
                     ));
                 });
         });
-    // .with_children(|parent| {
-    //     parent
-    //         .spawn((
-    //             ButtonBundle {
-    //                 style: Style {
-    //                     width: Val::Px(150.),
-    //                     height: Val::Px(65.),
-    //                     // horizontally center child text
-    //                     justify_content: JustifyContent::Center,
-    //                     // vertically center child text
-    //                     align_items: AlignItems::Center,
-    //                     border: UiRect {
-    //                         top: Val::Px(4.),
-    //                         left: Val::Px(4.),
-    //                         bottom: Val::Px(4.),
-    //                         right: Val::Px(4.),
-    //                     },
-    //                     ..default()
-    //                 },
-    //                 background_color: Color::BISQUE.into(),
-    //                 ..default()
-    //             },
-    //             ActionButton::Quit,
-    //         ))
-    //         .with_children(|parent| {
-    //             parent.spawn((
-    //                 TextBundle::from_section(
-    //                     "Quit",
-    //                     TextStyle {
-    //                         font: asset_server.load("fonts/Leila-Regular.ttf"),
-    //                         font_size: 40.0,
-    //                         color: OLIVE_GREEN,
-    //                     },
-    //                 ),
-    //                 ActionButton::Quit,
-    //             ));
-    //         });
-    // });
 }
 
 pub fn animate_menu_title(
@@ -384,7 +299,7 @@ pub fn interact_menu(
                     ActionButton::Play => next_state.set(AppState::StartRound),
                     ActionButton::Leaderboard => next_state.set(AppState::Leaderboard),
                     ActionButton::Settings => next_state.set(AppState::Settings),
-                    ActionButton::Quit => next_state.set(AppState::QuitGame),
+                    // ActionButton::Quit => next_state.set(AppState::QuitGame),
                 }
             }
             Interaction::Hovered => {

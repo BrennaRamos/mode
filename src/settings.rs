@@ -3,7 +3,6 @@ use std::time::Duration;
 use bevy::{
     audio::{PlaybackMode, Volume},
     prelude::*,
-    ui::widget::UiImageSize,
 };
 use bevy_tweening::{
     lens::{TransformRotationLens, UiPositionLens},
@@ -242,7 +241,7 @@ pub fn hover_fruit(
     mut commands: Commands,
     mut interaction_query: Query<
         (Ref<Interaction>, &mut BorderColor, &FruitType, Entity),
-        (With<Button>),
+        With<Button>,
     >,
     game_settings: ResMut<GameSettings>,
 ) {

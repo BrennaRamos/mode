@@ -716,8 +716,6 @@ pub fn interact_button(
 }
 
 pub fn show_results(
-    mut commands: Commands,
-    asset_server: Res<AssetServer>,
     time: Res<Time>,
     mut timer: ResMut<ResultTimer>,
     mut next_state: ResMut<NextState<AppState>>,
