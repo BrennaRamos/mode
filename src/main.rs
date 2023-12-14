@@ -28,11 +28,17 @@ fn main() {
         .init_resource::<PlayerData>()
         .init_resource::<Handles>()
         .init_resource::<Villagers>()
+        .init_resource::<VillagersGame>()
         .add_state::<AppState>()
         .add_systems(Startup, startup)
         .add_systems(
             OnEnter(AppState::StartRound),
-            (game_mod::clear_shapes, game_mod::play_game).chain(),
+            (
+                game_mod::clear_shapes,
+                game_mod::play_game,
+                game_mod::spawn_chibi_game,
+            )
+                .chain(),
         )
         .add_systems(
             OnEnter(AppState::GameOver),

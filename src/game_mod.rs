@@ -11,7 +11,7 @@ use std::time::Duration;
 
 use crate::{
     main_menu::{SoundEffect, BASIL_GREEN, OLIVE_GREEN},
-    settings::{GameSettings, Villagers},
+    settings::GameSettings,
     AppState,
 };
 
@@ -89,6 +89,30 @@ pub enum GridIdentifier {
 #[derive(Component)]
 pub struct RoundTimer;
 
+#[derive(Resource)]
+pub struct VillagersGame {
+    pub villagers: Vec<(String, bool, i32)>,
+}
+
+impl Default for VillagersGame {
+    fn default() -> Self {
+        Self {
+            villagers: vec![
+                ("characters/baker_solo.png".to_string(), false, 6),
+                ("characters/bug_collector_solo.png".to_string(), false, 11),
+                ("characters/traveler_solo.png".to_string(), false, 21),
+                ("characters/farmer_solo.png".to_string(), false, 31),
+                ("characters/gardener_solo.png".to_string(), false, 41),
+                ("characters/librarian_solo.png".to_string(), false, 51),
+                ("characters/merchant_solo.png".to_string(), false, 61),
+                ("characters/penguin_solo.png".to_string(), false, 81),
+                ("characters/student_solo.png".to_string(), false, 91),
+                ("characters/cat_solo.png".to_string(), false, 101),
+            ],
+        }
+    }
+}
+
 pub fn play_game(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
@@ -158,8 +182,6 @@ pub fn play_game(
         RoundTimer,
     ));
 
-    // Spawn Villagers
-
     let fruit_file_a = format!("icons/{:?}.png", game_settings.fruit_a).to_lowercase();
     let fruit_file_b = format!("icons/{:?}.png", game_settings.fruit_b).to_lowercase();
 
@@ -207,6 +229,77 @@ pub fn play_game(
     );
     game_data.level += 1;
     next_state.set(AppState::Pause);
+}
+
+// Spawn Villagers
+pub fn spawn_chibi_game(
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
+    villagers: Res<VillagersGame>,
+) {
+    let columns = 10;
+    let rows = 1;
+
+    commands
+        .spawn((
+            NodeBundle {
+                style: Style {
+                    // Use the CSS Grid algorithm for laying out this node
+                    display: Display::Grid,
+                    // Make node fill the entirety it's parent (in this case the window)
+                    width: Val::Percent(30.0),
+                    height: Val::Percent(30.0),
+                    // center the node vertically and horizontally within the window
+                    position_type: PositionType::Relative,
+                    top: Val::Px(450.0),
+                    left: Val::Px(10.0),
+                    ..default()
+                },
+                ..default()
+            },
+            GridIdentifier::Grid,
+        ))
+        .with_children(|builder| {
+            builder
+                .spawn((
+                    NodeBundle {
+                        style: Style {
+                            // Make the height of the node fill its parent
+                            height: Val::Percent(100.0),
+                            // Make the grid have a 1:1 aspect ratio meaning it will scale as an exact square
+                            // As the height is set explicitly, this means the width will adjust to match the height
+                            aspect_ratio: Some(1.0),
+                            // Use grid layout for this node
+                            display: Display::Grid,
+                            // Add 24px of padding around the grid
+                            padding: UiRect::all(Val::Px(24.0)),
+                            // Set the grid to have 10 columns all with sizes minmax(0, 1fr)
+                            // This creates 10 exactly evenly sized columns
+                            grid_template_columns: RepeatedGridTrack::flex(columns, 1.0),
+                            // Set the grid to have 1 rows all with sizes minmax(0, 1fr)
+                            // This creates 1 exactly evenly sized rows
+                            grid_template_rows: RepeatedGridTrack::flex(rows, 1.0),
+                            // Set a 12px gap/gutter between rows and columns
+                            column_gap: Val::Px(122.0),
+                            //left: Val::Px(10.0),
+                            ..default()
+                        },
+                        ..default()
+                    },
+                    GridIdentifier::Grid,
+                ))
+                .with_children(|builder| {
+                    for (index, villager) in villagers.villagers.iter().enumerate() {
+                        item_rect_villager(
+                            builder,
+                            &asset_server,
+                            villager.0.clone(),
+                            villager.1.clone(),
+                            index % 2 == 0,
+                        );
+                    }
+                });
+        });
 }
 
 fn choose_fruits(random: i32) -> AnswerButton {
@@ -299,7 +392,7 @@ fn process_guess(
     asset_server: &Res<AssetServer>,
     commands: &mut Commands,
     game_data: &mut ResMut<GameData>,
-    villagers: &Res<Villagers>,
+    villagers: &Res<VillagersGame>,
 ) -> bool {
     let font = asset_server.load("fonts/Leila-Regular.ttf");
     if (guess.trim() == "x" && exes > os) || (guess.trim() == "o" && os > exes) {
@@ -357,7 +450,8 @@ fn process_guess(
         ));
         for villager in villagers.villagers.iter() {
             let level_unlockable = villager.2;
-            if game_data.level == level_unlockable {
+            let status = villager.1;
+            if (game_data.level == level_unlockable) && status == false {
                 commands.spawn((
                     AudioBundle {
                         source: asset_server.load("music/NewChar.ogg"),
@@ -605,7 +699,7 @@ pub fn interact_button(
     mut commands: Commands,
     keyboard_input: Res<Input<KeyCode>>,
     mut timer: ResMut<PauseTimer>,
-    villagers: Res<Villagers>,
+    villagers: Res<VillagersGame>,
 ) {
     // Keyboard Input
     // Escape to Main Menu
@@ -722,7 +816,7 @@ pub fn show_results(
     mut timer: ResMut<ResultTimer>,
     mut next_state: ResMut<NextState<AppState>>,
     game_data: ResMut<GameData>,
-    mut villagers: ResMut<Villagers>,
+    mut villagers: ResMut<VillagersGame>,
 ) {
     timer.result_timer.tick(time.delta());
     if timer.result_timer.finished() {
@@ -874,6 +968,62 @@ fn item_rect(
                         TransformRotationLens {
                             start: Quat::from_rotation_z(10_f32.to_radians()),
                             end: Quat::from_rotation_z(350_f32.to_radians()),
+                        },
+                    )
+                    .with_repeat_strategy(RepeatStrategy::MirroredRepeat)
+                    .with_repeat_count(RepeatCount::Infinite),
+                ),
+            ));
+        });
+}
+
+fn item_rect_villager(
+    builder: &mut ChildBuilder,
+    asset_server: &Res<AssetServer>,
+    char_file: String,
+    unlocked: bool,
+    bounce_type: bool,
+) {
+    builder
+        .spawn((
+            NodeBundle {
+                style: Style {
+                    display: Display::Grid,
+                    padding: UiRect::all(Val::Px(3.0)),
+                    ..default()
+                },
+                ..default()
+            },
+            GridIdentifier::Grid,
+        ))
+        .with_children(|builder| {
+            builder.spawn((
+                ImageBundle {
+                    style: Style {
+                        height: Val::Px(125.0),
+                        width: Val::Px(100.0),
+                        ..default()
+                    },
+                    image: asset_server.load(char_file).into(),
+                    background_color: (if unlocked {
+                        Color::WHITE.into()
+                    } else {
+                        Color::NONE.into()
+                    }),
+                    ..default()
+                },
+                GridIdentifier::Grid,
+                Animator::new(
+                    Tween::new(
+                        if bounce_type {
+                            EaseFunction::BounceIn
+                        } else {
+                            EaseFunction::BounceOut
+                        },
+                        Duration::from_secs(1),
+                        UiPositionLens {
+                            start: UiRect::top(Val::Px(10.0)),
+                            end: UiRect::top(Val::Px(0.0)),
                         },
                     )
                     .with_repeat_strategy(RepeatStrategy::MirroredRepeat)
