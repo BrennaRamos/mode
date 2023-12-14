@@ -27,14 +27,6 @@ pub struct GameData {
     file_array: Vec<String>,
 }
 
-#[derive(Component, Clone, Debug, PartialEq)]
-pub enum FruitType {
-    Apple,
-    Pear,
-    Orange,
-    Strawberry,
-}
-
 impl Default for GameData {
     fn default() -> Self {
         Self {
@@ -48,6 +40,14 @@ impl Default for GameData {
             fruit_array: Default::default(),
         }
     }
+}
+
+#[derive(Component, Clone, Debug, PartialEq)]
+pub enum FruitType {
+    Apple,
+    Pear,
+    Orange,
+    Strawberry,
 }
 
 #[derive(Resource, Default)]
@@ -157,6 +157,8 @@ pub fn play_game(
         },
         RoundTimer,
     ));
+
+    // Spawn Villagers
 
     let fruit_file_a = format!("icons/{:?}.png", game_settings.fruit_a).to_lowercase();
     let fruit_file_b = format!("icons/{:?}.png", game_settings.fruit_b).to_lowercase();
