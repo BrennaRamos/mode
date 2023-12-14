@@ -77,14 +77,14 @@ pub fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
                             // vertically center child text
                             align_items: AlignItems::Center,
                             border: UiRect {
-                                top: Val::Px(2.),
-                                left: Val::Px(2.),
-                                bottom: Val::Px(2.),
-                                right: Val::Px(2.),
+                                top: Val::Px(4.),
+                                left: Val::Px(4.),
+                                bottom: Val::Px(4.),
+                                right: Val::Px(4.),
                             },
                             ..default()
                         },
-                        background_color: Color::WHITE.into(),
+                        background_color: Color::BISQUE.into(),
                         ..default()
                     },
                     BackButton::MainMenu,

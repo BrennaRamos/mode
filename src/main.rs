@@ -25,6 +25,7 @@ fn main() {
         .init_resource::<GameSettings>()
         .init_resource::<PlayerData>()
         .init_resource::<Handles>()
+        .init_resource::<Villagers>()
         .add_state::<AppState>()
         .add_systems(Startup, startup)
         .add_systems(
@@ -38,7 +39,7 @@ fn main() {
         .add_systems(OnEnter(AppState::QuitGame), main_menu::quit_game)
         .add_systems(
             Update,
-            (game_mod::interact_button, game_mod::spawn_timer).run_if(in_state(AppState::Pause)),
+            (game_mod::interact_button, game_mod::update_timer).run_if(in_state(AppState::Pause)),
         )
         .add_systems(
             Update,

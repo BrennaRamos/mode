@@ -3,14 +3,15 @@ use bevy::{
     prelude::*,
 };
 use bevy_tweening::{
-    lens::UiPositionLens, Animator, EaseFunction, RepeatCount, RepeatStrategy, Tween,
+    lens::{TransformRotationLens, UiPositionLens},
+    Animator, EaseFunction, RepeatCount, RepeatStrategy, Tween,
 };
 use rand::Rng;
 use std::time::Duration;
 
 use crate::{
-    main_menu::{SoundEffect, OLIVE_GREEN},
-    settings::GameSettings,
+    main_menu::{SoundEffect, BASIL_GREEN, OLIVE_GREEN},
+    settings::{GameSettings, Villagers},
     AppState,
 };
 
@@ -85,12 +86,16 @@ pub enum GridIdentifier {
     Grid,
 }
 
+#[derive(Component)]
+pub struct RoundTimer;
+
 pub fn play_game(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
     mut next_state: ResMut<NextState<AppState>>,
     mut game_data: ResMut<GameData>,
     game_settings: Res<GameSettings>,
+    timer: Res<PauseTimer>,
 ) {
     game_data.fruit_array.clear();
     game_data.file_array.clear();
@@ -124,6 +129,34 @@ pub fn play_game(
             ..default()
         }
     });
+    // Spawn Timer Text
+
+    let timer: String = format!("{:?}", timer.pause_timer.remaining_secs());
+    let font = asset_server.load("fonts/Leila-Regular.ttf");
+    commands.spawn((
+        {
+            TextBundle {
+                text: Text::from_section(
+                    timer,
+                    TextStyle {
+                        font,
+                        font_size: 48.0,
+                        color: OLIVE_GREEN,
+                    },
+                )
+                .with_alignment(TextAlignment::Center),
+                style: Style {
+                    position_type: PositionType::Relative,
+                    top: Val::Percent(2.0),
+                    left: Val::Percent(1.0),
+
+                    ..default()
+                },
+                ..default()
+            }
+        },
+        RoundTimer,
+    ));
 
     let fruit_file_a = format!("icons/{:?}.png", game_settings.fruit_a).to_lowercase();
     let fruit_file_b = format!("icons/{:?}.png", game_settings.fruit_b).to_lowercase();
@@ -251,7 +284,6 @@ fn print_fruits(
                             asset_server,
                             file_array[index].clone(),
                             fruit_array[index].clone(),
-                            index % 2 == 0,
                         );
                     }
                 });
@@ -265,9 +297,10 @@ fn process_guess(
     asset_server: &Res<AssetServer>,
     commands: &mut Commands,
     game_data: &mut ResMut<GameData>,
+    villagers: &Res<Villagers>,
 ) -> bool {
     let font = asset_server.load("fonts/Leila-Regular.ttf");
-    if guess.trim() == "x" && exes > os {
+    if (guess.trim() == "x" && exes > os) || (guess.trim() == "o" && os > exes) {
         // Spawn Correct
         commands.spawn((
             AudioBundle {
@@ -280,61 +313,102 @@ fn process_guess(
             },
             SoundEffect,
         ));
-        commands.spawn({
-            TextBundle {
-                text: Text::from_section(
-                    "Correct!",
-                    TextStyle {
-                        font,
-                        font_size: 48.0,
-                        color: Color::GREEN,
-                    },
-                )
-                .with_alignment(TextAlignment::Center),
-                style: Style {
-                    top: Val::Percent(70.0),
-                    left: Val::Percent(43.0),
-
-                    ..default()
-                },
-                ..default()
-            }
-        });
-        game_data.result = Result::Correct;
-        return true;
-    } else if guess.trim() == "o" && os > exes {
-        // Spawn Correct
         commands.spawn((
-            AudioBundle {
-                source: asset_server.load("music/Correct.ogg"),
-                settings: PlaybackSettings {
-                    mode: PlaybackMode::Despawn,
-                    ..Default::default()
-                },
-                ..default()
-            },
-            SoundEffect,
-        ));
-        commands.spawn({
-            TextBundle {
-                text: Text::from_section(
-                    "Correct!",
-                    TextStyle {
-                        font,
-                        font_size: 48.0,
-                        color: Color::GREEN,
-                    },
-                )
-                .with_alignment(TextAlignment::Center),
-                style: Style {
-                    top: Val::Percent(70.0),
-                    left: Val::Percent(43.0),
+            {
+                TextBundle {
+                    text: Text::from_section(
+                        "Correct!",
+                        TextStyle {
+                            font: font.clone(),
+                            font_size: 48.0,
+                            color: OLIVE_GREEN,
+                        },
+                    )
+                    .with_alignment(TextAlignment::Center),
+                    style: Style {
+                        top: Val::Percent(70.0),
+                        left: Val::Percent(43.0),
 
+                        ..default()
+                    },
                     ..default()
+                }
+            },
+            Animator::new(Tween::new(
+                EaseFunction::CubicOut,
+                Duration::from_millis(500),
+                UiPositionLens {
+                    start: UiRect {
+                        top: Val::Percent(70.0),
+                        left: Val::Percent(43.0),
+
+                        ..default()
+                    },
+                    end: UiRect {
+                        top: Val::Percent(60.0),
+                        left: Val::Percent(43.0),
+
+                        ..default()
+                    },
                 },
-                ..default()
+            )),
+        ));
+        for villager in villagers.villagers.iter() {
+            let level_unlockable = villager.2;
+            if game_data.level == level_unlockable {
+                commands.spawn((
+                    AudioBundle {
+                        source: asset_server.load("music/NewChar.ogg"),
+                        settings: PlaybackSettings {
+                            mode: PlaybackMode::Despawn,
+                            ..Default::default()
+                        },
+                        ..default()
+                    },
+                    SoundEffect,
+                ));
+                commands.spawn((
+                    {
+                        TextBundle {
+                            text: Text::from_section(
+                                "New Villager Unlocked!",
+                                TextStyle {
+                                    font: font.clone(),
+                                    font_size: 48.0,
+                                    color: OLIVE_GREEN,
+                                },
+                            )
+                            .with_alignment(TextAlignment::Center),
+                            style: Style {
+                                top: Val::Percent(75.0),
+                                left: Val::Percent(33.0),
+
+                                ..default()
+                            },
+                            ..default()
+                        }
+                    },
+                    Animator::new(Tween::new(
+                        EaseFunction::CubicOut,
+                        Duration::from_millis(500),
+                        UiPositionLens {
+                            start: UiRect {
+                                top: Val::Percent(75.0),
+                                left: Val::Percent(33.0),
+
+                                ..default()
+                            },
+                            end: UiRect {
+                                top: Val::Percent(65.0),
+                                left: Val::Percent(33.0),
+
+                                ..default()
+                            },
+                        },
+                    )),
+                ));
             }
-        });
+        }
         game_data.result = Result::Correct;
         return true;
     } else {
@@ -350,26 +424,46 @@ fn process_guess(
             },
             SoundEffect,
         ));
-        commands.spawn({
-            TextBundle {
-                text: Text::from_section(
-                    "Incorrect!",
-                    TextStyle {
-                        font: font.clone(),
-                        font_size: 48.0,
-                        color: Color::RED,
-                    },
-                )
-                .with_alignment(TextAlignment::Center),
-                style: Style {
-                    top: Val::Percent(70.0),
-                    left: Val::Percent(42.0),
+        commands.spawn((
+            {
+                TextBundle {
+                    text: Text::from_section(
+                        "Incorrect!",
+                        TextStyle {
+                            font: font.clone(),
+                            font_size: 48.0,
+                            color: Color::CRIMSON,
+                        },
+                    )
+                    .with_alignment(TextAlignment::Center),
+                    style: Style {
+                        top: Val::Percent(70.0),
+                        left: Val::Percent(42.0),
 
+                        ..default()
+                    },
                     ..default()
+                }
+            },
+            Animator::new(Tween::new(
+                EaseFunction::CubicOut,
+                Duration::from_millis(500),
+                UiPositionLens {
+                    start: UiRect {
+                        top: Val::Percent(70.0),
+                        left: Val::Percent(42.0),
+
+                        ..default()
+                    },
+                    end: UiRect {
+                        top: Val::Percent(60.0),
+                        left: Val::Percent(42.0),
+
+                        ..default()
+                    },
                 },
-                ..default()
-            }
-        });
+            )),
+        ));
         game_data.result = Result::Incorrect;
         return false;
     }
@@ -391,29 +485,6 @@ pub fn setup_ui(
             ..Default::default()
         },
         ..default()
-    });
-
-    // Spawn Timer Text
-    let timer: String = format!("Time: 05:00");
-    let font = asset_server.load("fonts/Leila-Regular.ttf");
-    commands.spawn({
-        TextBundle {
-            text: Text::from_section(
-                timer,
-                TextStyle {
-                    font,
-                    font_size: 64.0,
-                    color: OLIVE_GREEN,
-                },
-            ),
-            style: Style {
-                top: Val::Px(0.0),
-                right: Val::Px(0.0),
-
-                ..default()
-            },
-            ..default()
-        }
     });
 
     commands
@@ -440,13 +511,14 @@ pub fn setup_ui(
                             // vertically center child text
                             align_items: AlignItems::Center,
                             border: UiRect {
-                                top: Val::Px(2.),
-                                left: Val::Px(2.),
-                                bottom: Val::Px(2.),
-                                right: Val::Px(2.),
+                                top: Val::Px(4.),
+                                left: Val::Px(4.),
+                                bottom: Val::Px(4.),
+                                right: Val::Px(4.),
                             },
                             ..default()
                         },
+                        background_color: Color::BISQUE.into(),
                         ..default()
                     },
                     game_settings.fruit_a.clone(),
@@ -491,13 +563,14 @@ pub fn setup_ui(
                             // vertically center child text
                             align_items: AlignItems::Center,
                             border: UiRect {
-                                top: Val::Px(2.),
-                                left: Val::Px(2.),
-                                bottom: Val::Px(2.),
-                                right: Val::Px(2.),
+                                top: Val::Px(4.),
+                                left: Val::Px(4.),
+                                bottom: Val::Px(4.),
+                                right: Val::Px(4.),
                             },
                             ..default()
                         },
+                        background_color: Color::BISQUE.into(),
                         ..default()
                     },
                     game_settings.fruit_b.clone(),
@@ -530,6 +603,7 @@ pub fn interact_button(
     mut commands: Commands,
     keyboard_input: Res<Input<KeyCode>>,
     mut timer: ResMut<PauseTimer>,
+    villagers: Res<Villagers>,
 ) {
     // Keyboard Input
     // Escape to Main Menu
@@ -569,6 +643,7 @@ pub fn interact_button(
             &asset_server,
             &mut commands,
             &mut game_data,
+            &villagers,
         );
         next_state.set(AppState::ShowResults);
     }
@@ -594,6 +669,7 @@ pub fn interact_button(
             &asset_server,
             &mut commands,
             &mut game_data,
+            &villagers,
         );
         next_state.set(AppState::ShowResults);
     }
@@ -625,6 +701,7 @@ pub fn interact_button(
                     &asset_server,
                     &mut commands,
                     &mut game_data,
+                    &villagers,
                 );
                 next_state.set(AppState::ShowResults);
             }
@@ -632,7 +709,7 @@ pub fn interact_button(
                 *border_color = Color::SALMON.into();
             }
             Interaction::None => {
-                *border_color = Color::rgb(82.0 / 255.0, 88.0 / 255.0, 32.0 / 255.0).into();
+                *border_color = BASIL_GREEN.into();
             }
         }
     }
@@ -644,18 +721,24 @@ pub fn show_results(
     time: Res<Time>,
     mut timer: ResMut<ResultTimer>,
     mut next_state: ResMut<NextState<AppState>>,
-    mut game_data: ResMut<GameData>,
+    game_data: ResMut<GameData>,
+    mut villagers: ResMut<Villagers>,
 ) {
     timer.result_timer.tick(time.delta());
     if timer.result_timer.finished() {
         match game_data.result {
             Result::Correct => {
+                for villager in villagers.villagers.iter_mut() {
+                    let level_unlockable = villager.2;
+                    if game_data.level == level_unlockable {
+                        villager.1 = true;
+                    }
+                }
                 next_state.set(AppState::StartRound);
                 timer.result_timer.reset();
             }
             Result::Incorrect => {
                 next_state.set(AppState::GameOver);
-                game_data.level = 1;
                 timer.result_timer.reset();
             }
         }
@@ -731,7 +814,9 @@ pub fn game_over(
     mut query_fruit: Query<Entity, With<FruitType>>,
     mut query_music: Query<Entity, (With<PlaybackSettings>, Without<SoundEffect>)>,
     mut next_state: ResMut<NextState<AppState>>,
+    mut game_data: ResMut<GameData>,
 ) {
+    game_data.level = 1;
     for entity in query_text.iter_mut() {
         if let Some(entity) = commands.get_entity(entity) {
             entity.despawn_recursive();
@@ -756,15 +841,11 @@ pub fn game_over(
     next_state.set(AppState::MainMenu);
 }
 
-/// Create a coloured rectangle node. The node has size as it is assumed that it will be
-/// spawned as a child of a Grid container with `AlignItems::Stretch` and `JustifyItems::Stretch`
-/// which will allow it to take it's size from the size of the grid area it occupies.
 fn item_rect(
     builder: &mut ChildBuilder,
     asset_server: &Res<AssetServer>,
     fruit_file: String,
     fruit_type: FruitType,
-    bounce_type: bool,
 ) {
     builder
         .spawn((
@@ -788,15 +869,11 @@ fn item_rect(
                 GridIdentifier::Grid,
                 Animator::new(
                     Tween::new(
-                        if bounce_type {
-                            EaseFunction::BounceIn
-                        } else {
-                            EaseFunction::BounceOut
-                        },
-                        Duration::from_secs(1),
-                        UiPositionLens {
-                            start: UiRect::top(Val::Px(10.0)),
-                            end: UiRect::top(Val::Px(0.0)),
+                        EaseFunction::CubicInOut,
+                        Duration::from_millis(500),
+                        TransformRotationLens {
+                            start: Quat::from_rotation_z(10_f32.to_radians()),
+                            end: Quat::from_rotation_z(350_f32.to_radians()),
                         },
                     )
                     .with_repeat_strategy(RepeatStrategy::MirroredRepeat)
@@ -806,4 +883,8 @@ fn item_rect(
         });
 }
 
-pub fn spawn_timer(timer: ResMut<PauseTimer>) {}
+pub fn update_timer(timer: Res<PauseTimer>, mut query_timer: Query<&mut Text, With<RoundTimer>>) {
+    for mut text in query_timer.iter_mut() {
+        text.sections[0].value = format!("{:.1}", timer.pause_timer.remaining_secs());
+    }
+}

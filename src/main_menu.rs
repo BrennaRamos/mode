@@ -5,6 +5,8 @@ use bevy::render::color::*;
 use bevy::{core_pipeline::clear_color::ClearColorConfig, prelude::*};
 
 pub const OLIVE_GREEN: Color = Color::rgb(82.0 / 255.0, 88.0 / 255.0, 32.0 / 255.0);
+pub const BASIL_GREEN: Color = Color::rgb(166.0 / 255.0, 179.0 / 255.0, 64.0 / 255.0);
+pub const SKY_BLUE: Color = Color::rgb(137.0 / 255.0, 204.0 / 255.0, 196.0 / 255.0);
 
 #[derive(Component)]
 pub enum ActionButton {
@@ -54,6 +56,11 @@ pub fn setup_menu(
             clear_color: ClearColorConfig::Custom(Color::BISQUE),
         },
         transform: Transform::from_translation(Vec3::new(0.0, 0.0, 5.0)),
+        ..default()
+    });
+    commands.spawn(SpriteBundle {
+        texture: asset_server.load("background/background.png"),
+        transform: Transform::from_translation(Vec3::new(0.0, 0.0, -1.0)),
         ..default()
     });
     // Spawn Menu Title
@@ -125,14 +132,14 @@ pub fn setup_menu(
                             // vertically center child text
                             align_items: AlignItems::Center,
                             border: UiRect {
-                                top: Val::Px(2.),
-                                left: Val::Px(2.),
-                                bottom: Val::Px(2.),
-                                right: Val::Px(2.),
+                                top: Val::Px(4.),
+                                left: Val::Px(4.),
+                                bottom: Val::Px(4.),
+                                right: Val::Px(4.),
                             },
                             ..default()
                         },
-                        background_color: Color::WHITE.into(),
+                        background_color: Color::BISQUE.into(),
                         ..default()
                     },
                     ActionButton::Play,
@@ -164,14 +171,14 @@ pub fn setup_menu(
                             // vertically center child text
                             align_items: AlignItems::Center,
                             border: UiRect {
-                                top: Val::Px(2.),
-                                left: Val::Px(2.),
-                                bottom: Val::Px(2.),
-                                right: Val::Px(2.),
+                                top: Val::Px(4.),
+                                left: Val::Px(4.),
+                                bottom: Val::Px(4.),
+                                right: Val::Px(4.),
                             },
                             ..default()
                         },
-                        background_color: Color::WHITE.into(),
+                        background_color: Color::BISQUE.into(),
                         ..default()
                     },
                     ActionButton::Leaderboard,
@@ -203,14 +210,14 @@ pub fn setup_menu(
                             // vertically center child text
                             align_items: AlignItems::Center,
                             border: UiRect {
-                                top: Val::Px(2.),
-                                left: Val::Px(2.),
-                                bottom: Val::Px(2.),
-                                right: Val::Px(2.),
+                                top: Val::Px(4.),
+                                left: Val::Px(4.),
+                                bottom: Val::Px(4.),
+                                right: Val::Px(4.),
                             },
                             ..default()
                         },
-                        background_color: Color::WHITE.into(),
+                        background_color: Color::BISQUE.into(),
                         ..default()
                     },
                     ActionButton::Settings,
@@ -242,14 +249,14 @@ pub fn setup_menu(
                             // vertically center child text
                             align_items: AlignItems::Center,
                             border: UiRect {
-                                top: Val::Px(2.),
-                                left: Val::Px(2.),
-                                bottom: Val::Px(2.),
-                                right: Val::Px(2.),
+                                top: Val::Px(4.),
+                                left: Val::Px(4.),
+                                bottom: Val::Px(4.),
+                                right: Val::Px(4.),
                             },
                             ..default()
                         },
-                        background_color: Color::WHITE.into(),
+                        background_color: Color::BISQUE.into(),
                         ..default()
                     },
                     ActionButton::HowToPlay,
@@ -280,14 +287,14 @@ pub fn setup_menu(
     //                     // vertically center child text
     //                     align_items: AlignItems::Center,
     //                     border: UiRect {
-    //                         top: Val::Px(2.),
-    //                         left: Val::Px(2.),
-    //                         bottom: Val::Px(2.),
-    //                         right: Val::Px(2.),
+    //                         top: Val::Px(4.),
+    //                         left: Val::Px(4.),
+    //                         bottom: Val::Px(4.),
+    //                         right: Val::Px(4.),
     //                     },
     //                     ..default()
     //                 },
-    //                 background_color: Color::WHITE.into(),
+    //                 background_color: Color::BISQUE.into(),
     //                 ..default()
     //             },
     //             ActionButton::Quit,

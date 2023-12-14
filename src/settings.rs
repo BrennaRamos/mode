@@ -1,11 +1,18 @@
+use std::time::Duration;
+
 use bevy::{
     audio::{PlaybackMode, Volume},
     prelude::*,
+    ui::widget::UiImageSize,
+};
+use bevy_tweening::{
+    lens::{TransformRotationLens, UiPositionLens},
+    Animator, EaseFunction, RepeatCount, RepeatStrategy, Tween,
 };
 
 use crate::{
-    game_mod::FruitType,
-    main_menu::{SoundEffect, OLIVE_GREEN},
+    game_mod::{FruitType, GridIdentifier},
+    main_menu::{SoundEffect, BASIL_GREEN, OLIVE_GREEN, SKY_BLUE},
     AppState,
 };
 
@@ -34,6 +41,30 @@ impl Default for GameSettings {
         Self {
             fruit_a: FruitType::Apple,
             fruit_b: FruitType::Pear,
+        }
+    }
+}
+
+#[derive(Resource)]
+pub struct Villagers {
+    pub villagers: Vec<(String, bool, i32)>,
+}
+
+impl Default for Villagers {
+    fn default() -> Self {
+        Self {
+            villagers: vec![
+                ("characters/baker.png".to_string(), false, 6),
+                ("characters/bug_collector.png".to_string(), false, 11),
+                ("characters/traveler.png".to_string(), false, 21),
+                ("characters/farmer.png".to_string(), false, 31),
+                ("characters/gardener.png".to_string(), false, 41),
+                ("characters/librarian.png".to_string(), false, 51),
+                ("characters/merchant.png".to_string(), false, 61),
+                ("characters/penguin.png".to_string(), false, 81),
+                ("characters/student.png".to_string(), false, 91),
+                ("characters/cat.png".to_string(), false, 101),
+            ],
         }
     }
 }
@@ -71,6 +102,31 @@ pub fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
             ..default()
         }
     });
+    // Spawn Subtitle Text
+    let title = format!(
+        "       Select the type of fruit you see in game. 
+        Light green is Fruit A, light blue is Fruit B."
+    );
+    let font = asset_server.load("fonts/Leila-Regular.ttf");
+    commands.spawn({
+        TextBundle {
+            text: Text::from_section(
+                title,
+                TextStyle {
+                    font,
+                    font_size: 32.0,
+                    color: OLIVE_GREEN,
+                },
+            )
+            .with_alignment(TextAlignment::Center),
+            style: Style {
+                top: Val::Percent(28.0),
+                left: Val::Percent(18.0),
+                ..default()
+            },
+            ..default()
+        }
+    });
 
     // Spawn Menu Buttons
     commands
@@ -100,14 +156,14 @@ pub fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
                             // vertically center child text
                             align_items: AlignItems::Center,
                             border: UiRect {
-                                top: Val::Px(2.),
-                                left: Val::Px(2.),
-                                bottom: Val::Px(2.),
-                                right: Val::Px(2.),
+                                top: Val::Px(4.),
+                                left: Val::Px(4.),
+                                bottom: Val::Px(4.),
+                                right: Val::Px(4.),
                             },
                             ..default()
                         },
-                        background_color: Color::WHITE.into(),
+                        background_color: Color::BISQUE.into(),
                         ..default()
                     },
                     BackButton::MainMenu,
@@ -204,9 +260,9 @@ pub fn hover_fruit(
                 }
                 Interaction::None => {
                     if *fruit_type == game_settings.fruit_a {
-                        *border_color = Color::CRIMSON.into();
+                        *border_color = BASIL_GREEN.into();
                     } else if *fruit_type == game_settings.fruit_b {
-                        *border_color = Color::BLUE.into();
+                        *border_color = SKY_BLUE.into();
                     } else {
                         *border_color = OLIVE_GREEN.into();
                     }
@@ -216,9 +272,9 @@ pub fn hover_fruit(
             }
         } else if *interaction == Interaction::None {
             if *fruit_type == game_settings.fruit_a {
-                *border_color = Color::CRIMSON.into();
+                *border_color = BASIL_GREEN.into();
             } else if *fruit_type == game_settings.fruit_b {
-                *border_color = Color::BLUE.into();
+                *border_color = SKY_BLUE.into();
             } else {
                 *border_color = OLIVE_GREEN.into();
             }
@@ -272,16 +328,74 @@ pub fn set_fruits(
     }
 }
 
-pub fn spawn_chibi(mut commands: Commands, asset_server: Res<AssetServer>) {
-    commands.spawn(SpriteBundle {
-        texture: asset_server.load("characters/baker.png"),
-        transform: Transform::from_xyz(0.0, -200.0, 0.0).with_scale(Vec3 {
-            x: 3.0,
-            y: 3.0,
-            z: 1.0,
-        }),
-        ..default()
-    });
+pub fn spawn_chibi(
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
+    villagers: Res<Villagers>,
+) {
+    let columns = 10;
+    let rows = 1;
+
+    commands
+        .spawn((
+            NodeBundle {
+                style: Style {
+                    // Use the CSS Grid algorithm for laying out this node
+                    display: Display::Grid,
+                    // Make node fill the entirety it's parent (in this case the window)
+                    width: Val::Percent(30.0),
+                    height: Val::Percent(30.0),
+                    // center the node vertically and horizontally within the window
+                    position_type: PositionType::Relative,
+                    top: Val::Px(450.0),
+                    left: Val::Px(10.0),
+                    ..default()
+                },
+                ..default()
+            },
+            GridIdentifier::Grid,
+        ))
+        .with_children(|builder| {
+            builder
+                .spawn((
+                    NodeBundle {
+                        style: Style {
+                            // Make the height of the node fill its parent
+                            height: Val::Percent(100.0),
+                            // Make the grid have a 1:1 aspect ratio meaning it will scale as an exact square
+                            // As the height is set explicitly, this means the width will adjust to match the height
+                            aspect_ratio: Some(1.0),
+                            // Use grid layout for this node
+                            display: Display::Grid,
+                            // Add 24px of padding around the grid
+                            padding: UiRect::all(Val::Px(24.0)),
+                            // Set the grid to have 10 columns all with sizes minmax(0, 1fr)
+                            // This creates 10 exactly evenly sized columns
+                            grid_template_columns: RepeatedGridTrack::flex(columns, 1.0),
+                            // Set the grid to have 1 rows all with sizes minmax(0, 1fr)
+                            // This creates 1 exactly evenly sized rows
+                            grid_template_rows: RepeatedGridTrack::flex(rows, 1.0),
+                            // Set a 12px gap/gutter between rows and columns
+                            column_gap: Val::Px(122.0),
+                            //left: Val::Px(10.0),
+                            ..default()
+                        },
+                        ..default()
+                    },
+                    GridIdentifier::Grid,
+                ))
+                .with_children(|builder| {
+                    for (index, villager) in villagers.villagers.iter().enumerate() {
+                        item_rect(
+                            builder,
+                            &asset_server,
+                            villager.0.clone(),
+                            villager.1.clone(),
+                            index % 2 == 0,
+                        );
+                    }
+                });
+        });
 }
 
 pub fn spawn_fruit(mut commands: Commands, asset_server: Res<AssetServer>) {
@@ -315,13 +429,14 @@ pub fn spawn_fruit(mut commands: Commands, asset_server: Res<AssetServer>) {
                             position_type: PositionType::Relative,
                             left: Val::Px(100.0),
                             border: UiRect {
-                                top: Val::Px(2.),
-                                left: Val::Px(2.),
-                                bottom: Val::Px(2.),
-                                right: Val::Px(2.),
+                                top: Val::Px(4.),
+                                left: Val::Px(4.),
+                                bottom: Val::Px(4.),
+                                right: Val::Px(4.),
                             },
                             ..default()
                         },
+                        background_color: Color::BISQUE.into(),
                         ..default()
                     },
                     FruitType::Apple,
@@ -336,6 +451,18 @@ pub fn spawn_fruit(mut commands: Commands, asset_server: Res<AssetServer>) {
                             ..default()
                         },
                         FruitType::Apple,
+                        Animator::new(
+                            Tween::new(
+                                EaseFunction::CubicInOut,
+                                Duration::from_millis(500),
+                                TransformRotationLens {
+                                    start: Quat::from_rotation_z(10_f32.to_radians()),
+                                    end: Quat::from_rotation_z(350_f32.to_radians()),
+                                },
+                            )
+                            .with_repeat_strategy(RepeatStrategy::MirroredRepeat)
+                            .with_repeat_count(RepeatCount::Infinite),
+                        ),
                     ));
                 });
         });
@@ -370,13 +497,14 @@ pub fn spawn_fruit(mut commands: Commands, asset_server: Res<AssetServer>) {
                             position_type: PositionType::Relative,
                             left: Val::Px(100.0),
                             border: UiRect {
-                                top: Val::Px(2.),
-                                left: Val::Px(2.),
-                                bottom: Val::Px(2.),
-                                right: Val::Px(2.),
+                                top: Val::Px(4.),
+                                left: Val::Px(4.),
+                                bottom: Val::Px(4.),
+                                right: Val::Px(4.),
                             },
                             ..default()
                         },
+                        background_color: Color::BISQUE.into(),
                         ..default()
                     },
                     FruitType::Pear,
@@ -391,6 +519,18 @@ pub fn spawn_fruit(mut commands: Commands, asset_server: Res<AssetServer>) {
                             ..default()
                         },
                         FruitType::Pear,
+                        Animator::new(
+                            Tween::new(
+                                EaseFunction::CubicInOut,
+                                Duration::from_millis(500),
+                                TransformRotationLens {
+                                    start: Quat::from_rotation_z(10_f32.to_radians()),
+                                    end: Quat::from_rotation_z(350_f32.to_radians()),
+                                },
+                            )
+                            .with_repeat_strategy(RepeatStrategy::MirroredRepeat)
+                            .with_repeat_count(RepeatCount::Infinite),
+                        ),
                     ));
                 });
         });
@@ -425,13 +565,14 @@ pub fn spawn_fruit(mut commands: Commands, asset_server: Res<AssetServer>) {
                             position_type: PositionType::Relative,
                             left: Val::Px(100.0),
                             border: UiRect {
-                                top: Val::Px(2.),
-                                left: Val::Px(2.),
-                                bottom: Val::Px(2.),
-                                right: Val::Px(2.),
+                                top: Val::Px(4.),
+                                left: Val::Px(4.),
+                                bottom: Val::Px(4.),
+                                right: Val::Px(4.),
                             },
                             ..default()
                         },
+                        background_color: Color::BISQUE.into(),
                         ..default()
                     },
                     FruitType::Orange,
@@ -446,6 +587,18 @@ pub fn spawn_fruit(mut commands: Commands, asset_server: Res<AssetServer>) {
                             ..default()
                         },
                         FruitType::Orange,
+                        Animator::new(
+                            Tween::new(
+                                EaseFunction::CubicInOut,
+                                Duration::from_millis(500),
+                                TransformRotationLens {
+                                    start: Quat::from_rotation_z(10_f32.to_radians()),
+                                    end: Quat::from_rotation_z(350_f32.to_radians()),
+                                },
+                            )
+                            .with_repeat_strategy(RepeatStrategy::MirroredRepeat)
+                            .with_repeat_count(RepeatCount::Infinite),
+                        ),
                     ));
                 });
         });
@@ -479,13 +632,14 @@ pub fn spawn_fruit(mut commands: Commands, asset_server: Res<AssetServer>) {
                             position_type: PositionType::Relative,
                             left: Val::Px(100.0),
                             border: UiRect {
-                                top: Val::Px(2.),
-                                left: Val::Px(2.),
-                                bottom: Val::Px(2.),
-                                right: Val::Px(2.),
+                                top: Val::Px(4.),
+                                left: Val::Px(4.),
+                                bottom: Val::Px(4.),
+                                right: Val::Px(4.),
                             },
                             ..default()
                         },
+                        background_color: Color::BISQUE.into(),
                         ..default()
                     },
                     FruitType::Strawberry,
@@ -500,6 +654,18 @@ pub fn spawn_fruit(mut commands: Commands, asset_server: Res<AssetServer>) {
                             ..default()
                         },
                         FruitType::Strawberry,
+                        Animator::new(
+                            Tween::new(
+                                EaseFunction::CubicInOut,
+                                Duration::from_millis(500),
+                                TransformRotationLens {
+                                    start: Quat::from_rotation_z(10_f32.to_radians()),
+                                    end: Quat::from_rotation_z(350_f32.to_radians()),
+                                },
+                            )
+                            .with_repeat_strategy(RepeatStrategy::MirroredRepeat)
+                            .with_repeat_count(RepeatCount::Infinite),
+                        ),
                     ));
                 });
         });
@@ -538,4 +704,60 @@ pub fn clear_shapes(
             entity.despawn_recursive();
         }
     }
+}
+
+fn item_rect(
+    builder: &mut ChildBuilder,
+    asset_server: &Res<AssetServer>,
+    char_file: String,
+    unlocked: bool,
+    bounce_type: bool,
+) {
+    builder
+        .spawn((
+            NodeBundle {
+                style: Style {
+                    display: Display::Grid,
+                    padding: UiRect::all(Val::Px(3.0)),
+                    ..default()
+                },
+                ..default()
+            },
+            GridIdentifier::Grid,
+        ))
+        .with_children(|builder| {
+            builder.spawn((
+                ImageBundle {
+                    style: Style {
+                        height: Val::Px(125.0),
+                        width: Val::Px(100.0),
+                        ..default()
+                    },
+                    image: asset_server.load(char_file).into(),
+                    background_color: (if unlocked {
+                        Color::WHITE.into()
+                    } else {
+                        Color::GRAY.into()
+                    }),
+                    ..default()
+                },
+                GridIdentifier::Grid,
+                Animator::new(
+                    Tween::new(
+                        if bounce_type {
+                            EaseFunction::BounceIn
+                        } else {
+                            EaseFunction::BounceOut
+                        },
+                        Duration::from_secs(1),
+                        UiPositionLens {
+                            start: UiRect::top(Val::Px(10.0)),
+                            end: UiRect::top(Val::Px(0.0)),
+                        },
+                    )
+                    .with_repeat_strategy(RepeatStrategy::MirroredRepeat)
+                    .with_repeat_count(RepeatCount::Infinite),
+                ),
+            ));
+        });
 }

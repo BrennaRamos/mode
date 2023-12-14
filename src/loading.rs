@@ -67,7 +67,7 @@ pub fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
                             },
                             ..default()
                         },
-                        background_color: Color::WHITE.into(),
+                        background_color: Color::BISQUE.into(),
                         ..default()
                     },
                     BackButton::MainMenu,
