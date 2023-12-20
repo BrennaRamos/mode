@@ -11,7 +11,7 @@ use std::time::Duration;
 
 use crate::{
     leaderboard::UpdateRoundEvent,
-    main_menu::{SoundEffect, BASIL_GREEN, OLIVE_GREEN},
+    main_menu::{SoundEffect, BASIL_GREEN, FONT, OLIVE_GREEN},
     settings::{GameSettings, Villagers},
     AppState,
 };
@@ -49,14 +49,6 @@ pub enum FruitType {
     Pear,
     Orange,
     Strawberry,
-}
-
-#[derive(Resource, Default)]
-pub struct PlayerData {
-    username: String,
-    pin: i32,
-    level_reached: i32,
-    speed: f32,
 }
 
 #[derive(Resource)]
@@ -108,13 +100,14 @@ pub fn play_game(
 
     // Spawn Level Text
     let title = format!("Level {}", game_data.level);
-    let font = asset_server.load("fonts/Leila-Regular.ttf");
+    println!("{:?}", game_data.level);
+
     commands.spawn({
         TextBundle {
             text: Text::from_section(
                 title,
                 TextStyle {
-                    font,
+                    font: asset_server.load(FONT),
                     font_size: 64.0,
                     color: OLIVE_GREEN,
                 },
@@ -132,14 +125,14 @@ pub fn play_game(
     // Spawn Timer Text
 
     let timer: String = format!("{:?}", timer.pause_timer.remaining_secs());
-    let font = asset_server.load("fonts/Leila-Regular.ttf");
+
     commands.spawn((
         {
             TextBundle {
                 text: Text::from_section(
                     timer,
                     TextStyle {
-                        font,
+                        font: asset_server.load(FONT),
                         font_size: 48.0,
                         color: OLIVE_GREEN,
                     },
@@ -203,7 +196,6 @@ pub fn play_game(
         &game_data.fruit_array,
         &game_data.file_array,
     );
-    game_data.level += 1;
     next_state.set(AppState::Pause);
 }
 
@@ -363,9 +355,9 @@ fn process_guess(
     game_data: &mut ResMut<GameData>,
     villagers: &Res<Villagers>,
 ) -> bool {
-    let font = asset_server.load("fonts/Leila-Regular.ttf");
     if (guess.trim() == "x" && exes > os) || (guess.trim() == "o" && os > exes) {
         // Spawn Correct
+        game_data.level += 1;
         commands.spawn((
             AudioBundle {
                 source: asset_server.load("music/Correct.ogg"),
@@ -383,7 +375,7 @@ fn process_guess(
                     text: Text::from_section(
                         "Correct!",
                         TextStyle {
-                            font: font.clone(),
+                            font: asset_server.load(FONT),
                             font_size: 48.0,
                             color: OLIVE_GREEN,
                         },
@@ -438,7 +430,7 @@ fn process_guess(
                             text: Text::from_section(
                                 "New Villager Unlocked!",
                                 TextStyle {
-                                    font: font.clone(),
+                                    font: asset_server.load(FONT),
                                     font_size: 48.0,
                                     color: OLIVE_GREEN,
                                 },
@@ -495,7 +487,7 @@ fn process_guess(
                     text: Text::from_section(
                         "Incorrect!",
                         TextStyle {
-                            font: font.clone(),
+                            font: asset_server.load(FONT),
                             font_size: 48.0,
                             color: Color::CRIMSON,
                         },
@@ -833,23 +825,9 @@ pub fn pause(
     }
 }
 
-pub fn upload_score(
-    game_data: ResMut<GameData>,
-    mut player_data: ResMut<PlayerData>,
-    mut round_event: EventWriter<UpdateRoundEvent>,
-) {
-    player_data.username = "sampleName".into();
-    player_data.pin = 1234;
-    player_data.level_reached = game_data.level;
-    player_data.speed = game_data.time_elapsed.as_secs_f32();
-
-    println!(
-        "{} {} {} {:?}",
-        player_data.username, player_data.pin, player_data.level_reached, player_data.speed
-    );
-
+pub fn upload_score(game_data: ResMut<GameData>, mut round_event: EventWriter<UpdateRoundEvent>) {
     round_event.send(UpdateRoundEvent {
-        round: game_data.level.into(),
+        round: (game_data.level - 1) as i64,
     });
 }
 

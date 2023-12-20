@@ -1,3 +1,4 @@
+use crate::main_menu::FONT;
 use crate::AppState;
 use bevy::render::camera::ScalingMode;
 use bevy::render::color::*;
@@ -94,14 +95,14 @@ pub fn setup_loading(
     ));
 
     // Spawn Loading Text
-    let font = asset_server.load("fonts/Leila-Regular.ttf");
+
     commands.spawn((
         {
             TextBundle {
                 text: Text::from_section(
                     "Loading",
                     TextStyle {
-                        font,
+                        font: asset_server.load(FONT),
                         font_size: 48.0,
                         color: OLIVE_GREEN,
                     },

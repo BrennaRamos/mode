@@ -7,6 +7,7 @@ use bevy::prelude::*;
 pub const OLIVE_GREEN: Color = Color::rgb(82.0 / 255.0, 88.0 / 255.0, 32.0 / 255.0);
 pub const BASIL_GREEN: Color = Color::rgb(166.0 / 255.0, 179.0 / 255.0, 64.0 / 255.0);
 pub const SKY_BLUE: Color = Color::rgb(137.0 / 255.0, 204.0 / 255.0, 196.0 / 255.0);
+pub const FONT: &str = "fonts/Leila-Regular.ttf";
 
 #[derive(Component)]
 pub enum ActionButton {
@@ -178,7 +179,7 @@ pub fn setup_menu(
                 .with_children(|parent| {
                     parent.spawn((
                         TextBundle::from_section(
-                            "Settings",
+                            "Village",
                             TextStyle {
                                 font: asset_server.load("fonts/Leila-Regular.ttf"),
                                 font_size: 40.0,
@@ -314,7 +315,7 @@ pub fn interact_menu(
 
 pub fn clear_shapes(
     mut commands: Commands,
-    mut query: Query<Entity, With<ActionButton>>,
+    mut query: Query<Entity, (With<ActionButton>, With<Parent>)>,
     mut query_title: Query<Entity, With<AnimationTimer>>,
     mut query_music: Query<Entity, (With<PlaybackSettings>, Without<SoundEffect>)>,
     current_state: Res<State<AppState>>,

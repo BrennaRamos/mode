@@ -4,7 +4,8 @@ use bevy::{
 };
 
 use crate::{
-    main_menu::{SoundEffect, OLIVE_GREEN},
+    main_menu::{SoundEffect, BASIL_GREEN, FONT, OLIVE_GREEN},
+    settings::Villagers,
     AppState,
 };
 
@@ -84,25 +85,28 @@ struct UserScore {
     score: i64,
 }
 
-pub fn setup_scene(mut commands: Commands, login_data: ResMut<User>) {
+pub fn setup_scene(
+    mut commands: Commands,
+    login_data: ResMut<User>,
+    asset_server: Res<AssetServer>,
+) {
     if !login_data.user.is_empty() {
-        spawn_user_text(&mut commands, &login_data);
+        spawn_user_text(&mut commands, &login_data, &asset_server);
 
         return;
     }
-
     // Spawn form buttons if user is default
     commands
         .spawn((
             NodeBundle {
                 style: Style {
                     justify_self: JustifySelf::Start,
-                    align_self: AlignSelf::Center,
+                    align_self: AlignSelf::End,
                     flex_direction: FlexDirection::Column,
                     padding: UiRect::all(Val::Px(25.0)),
                     ..default()
                 },
-                background_color: BackgroundColor(Color::BLACK),
+                background_color: BackgroundColor(Color::NONE),
                 ..default()
             },
             LoginForm,
@@ -110,10 +114,11 @@ pub fn setup_scene(mut commands: Commands, login_data: ResMut<User>) {
         .with_children(|builder| {
             builder.spawn(TextBundle {
                 text: Text::from_section(
-                    "USERNAME".to_string(),
+                    "USERNAME : min 3".to_string(),
                     TextStyle {
+                        font: asset_server.load(FONT),
                         font_size: 20.0,
-                        color: Color::WHITE,
+                        color: OLIVE_GREEN,
                         ..default()
                     },
                 ),
@@ -137,8 +142,9 @@ pub fn setup_scene(mut commands: Commands, login_data: ResMut<User>) {
                         text: Text::from_section(
                             "".to_string(),
                             TextStyle {
+                                font: asset_server.load(FONT),
                                 font_size: 40.0,
-                                color: Color::WHITE,
+                                color: Color::BEIGE,
                                 ..default()
                             },
                         ),
@@ -148,10 +154,11 @@ pub fn setup_scene(mut commands: Commands, login_data: ResMut<User>) {
 
             builder.spawn(TextBundle {
                 text: Text::from_section(
-                    "PIN".to_string(),
+                    "PIN : only digits, min 4".to_string(),
                     TextStyle {
+                        font: asset_server.load(FONT),
                         font_size: 20.0,
-                        color: Color::WHITE,
+                        color: OLIVE_GREEN,
                         ..default()
                     },
                 ),
@@ -181,8 +188,9 @@ pub fn setup_scene(mut commands: Commands, login_data: ResMut<User>) {
                         text: Text::from_section(
                             "".to_string(),
                             TextStyle {
+                                // font: asset_server.load(FONT),
                                 font_size: 40.0,
-                                color: Color::WHITE,
+                                color: Color::BEIGE,
                                 ..default()
                             },
                         ),
@@ -213,8 +221,9 @@ pub fn setup_scene(mut commands: Commands, login_data: ResMut<User>) {
                         text: Text::from_section(
                             "SUBMIT".to_string(),
                             TextStyle {
+                                font: asset_server.load(FONT),
                                 font_size: 40.0,
-                                color: Color::WHITE,
+                                color: Color::BEIGE,
                                 ..default()
                             },
                         ),
@@ -227,7 +236,7 @@ pub fn setup_scene(mut commands: Commands, login_data: ResMut<User>) {
 fn update_round(
     mut round_executor: AsyncTaskRunner<Result<ehttp::Response, ehttp::Error>>,
     mut update_round_events: EventReader<UpdateRoundEvent>,
-    mut login_data: ResMut<User>,
+    mut user: ResMut<User>,
 ) {
     match round_executor.poll() {
         AsyncTaskStatus::Finished(_) => (),
@@ -235,14 +244,14 @@ fn update_round(
     }
 
     for event in update_round_events.read() {
-        if event.round > login_data.score {
-            login_data.score = event.round;
+        if event.round > user.score {
+            user.score = event.round;
             if let Ok(user) = serde_json::ser::to_vec(&User {
-                user: login_data.user.clone(),
-                pin: login_data.pin,
-                score: login_data.score,
+                user: user.user.clone(),
+                pin: user.pin,
+                score: user.score,
             }) {
-                let mut request = ehttp::Request::post("http://5.161.78.176:3000/update", user);
+                let mut request = ehttp::Request::post("https://ode.halyte.net/update", user);
                 request
                     .headers
                     .insert("Content-Type".into(), "application/json".into());
@@ -256,6 +265,7 @@ fn spawn_leaderboard(
     mut commands: Commands,
     mut response_executor: AsyncTaskRunner<Result<ehttp::Response, ehttp::Error>>,
     leaderboard_query: Query<Entity, With<Leaderboard>>,
+    asset_server: Res<AssetServer>,
 ) {
     if !leaderboard_query.is_empty() {
         return;
@@ -263,7 +273,7 @@ fn spawn_leaderboard(
 
     match response_executor.poll() {
         AsyncTaskStatus::Idle => {
-            let request = ehttp::Request::get("http://5.161.78.176:3000/");
+            let request = ehttp::Request::get("https://ode.halyte.net/");
             response_executor.start(ehttp::fetch_async(request));
         }
         AsyncTaskStatus::Finished(response) => {
@@ -275,7 +285,7 @@ fn spawn_leaderboard(
                         .spawn((
                             NodeBundle {
                                 style: Style {
-                                    justify_self: JustifySelf::End,
+                                    justify_self: JustifySelf::Center,
                                     align_self: AlignSelf::Center,
                                     flex_direction: FlexDirection::Column,
                                     ..default()
@@ -299,15 +309,16 @@ fn spawn_leaderboard(
                                     .with_children(|builder| {
                                         builder.spawn(TextBundle {
                                             style: Style {
-                                                margin: UiRect::right(Val::Px(15.0)),
+                                                margin: UiRect::right(Val::Px(25.0)),
                                                 width: Val::Px(20.0),
                                                 ..default()
                                             },
                                             text: Text::from_section(
                                                 format!("{}", idx + 1),
                                                 TextStyle {
-                                                    font_size: 20.0,
-                                                    color: Color::WHITE,
+                                                    font: asset_server.load(FONT),
+                                                    font_size: 25.0,
+                                                    color: OLIVE_GREEN,
                                                     ..default()
                                                 },
                                             ),
@@ -323,8 +334,9 @@ fn spawn_leaderboard(
                                             text: Text::from_section(
                                                 user_score.user.clone(),
                                                 TextStyle {
-                                                    font_size: 20.0,
-                                                    color: Color::WHITE,
+                                                    font: asset_server.load(FONT),
+                                                    font_size: 25.0,
+                                                    color: OLIVE_GREEN,
                                                     ..default()
                                                 },
                                             ),
@@ -339,8 +351,9 @@ fn spawn_leaderboard(
                                             text: Text::from_section(
                                                 format!("{}", user_score.score),
                                                 TextStyle {
-                                                    font_size: 20.0,
-                                                    color: Color::WHITE,
+                                                    font: asset_server.load(FONT),
+                                                    font_size: 25.0,
+                                                    color: OLIVE_GREEN,
                                                     ..default()
                                                 },
                                             ),
@@ -390,13 +403,16 @@ fn handle_submit_button(
     editing_query: Query<Entity, With<Editing>>,
     mut submit_executor: AsyncTaskRunner<Result<ehttp::Response, ehttp::Error>>,
     mut login_data: ResMut<User>,
+    mut villagers: ResMut<Villagers>,
+    asset_server: Res<AssetServer>,
+    leaderboard_query: Query<Entity, With<Leaderboard>>,
 ) {
     match submit_executor.poll() {
         AsyncTaskStatus::Finished(result) => {
             if let Ok(result) = result {
                 if let Ok(user) = serde_json::from_slice::<User>(&result.bytes) {
                     // Despawn form
-                    for login_entity in login_form_query.iter() {
+                    for login_entity in login_form_query.iter().chain(leaderboard_query.iter()) {
                         if let Some(login_entity) = commands.get_entity(login_entity) {
                             login_entity.despawn_recursive();
                         }
@@ -407,7 +423,13 @@ fn handle_submit_button(
                     login_data.pin = user.pin;
                     login_data.score = user.score;
 
-                    spawn_user_text(&mut commands, &login_data);
+                    for (_index, villager) in villagers.villagers.iter_mut().enumerate() {
+                        if user.score >= (villager.3 - 1) as i64 {
+                            villager.2 = true;
+                        }
+                    }
+
+                    spawn_user_text(&mut commands, &login_data, &asset_server);
                 }
             }
         }
@@ -428,7 +450,7 @@ fn handle_submit_button(
                     let mut password = None;
                     for child in children_query.iter_descendants(username_button) {
                         if let Ok(text) = text_query.get(child) {
-                            if text.sections[0].value.len() > 3 {
+                            if text.sections[0].value.len() > 2 {
                                 username = Some(text.sections[0].value.clone());
                             }
                         }
@@ -441,13 +463,14 @@ fn handle_submit_button(
                     if let Some(username) = username {
                         if let Some(password) = password {
                             if let Ok(pin) = password.parse::<i64>() {
-                                let new_user = UserLogin {
+                                let new_user = User {
                                     user: username,
                                     pin,
+                                    score: login_data.score,
                                 };
                                 if let Ok(new_user) = serde_json::ser::to_vec(&new_user) {
                                     let mut request = ehttp::Request::post(
-                                        "http://5.161.78.176:3000/user",
+                                        "https://ode.halyte.net/user",
                                         new_user,
                                     );
                                     request
@@ -466,13 +489,13 @@ fn handle_submit_button(
 }
 
 /// Spawn text with username/score
-fn spawn_user_text(commands: &mut Commands, login_data: &ResMut<User>) {
+fn spawn_user_text(commands: &mut Commands, user: &ResMut<User>, asset_server: &Res<AssetServer>) {
     commands
         .spawn((
             NodeBundle {
                 style: Style {
                     justify_self: JustifySelf::Start,
-                    align_self: AlignSelf::Center,
+                    align_self: AlignSelf::End,
                     flex_direction: FlexDirection::Column,
                     margin: UiRect::left(Val::Px(20.0)),
                     ..default()
@@ -484,9 +507,11 @@ fn spawn_user_text(commands: &mut Commands, login_data: &ResMut<User>) {
         .with_children(|builder| {
             builder.spawn(TextBundle {
                 text: Text::from_section(
-                    format!("{}", login_data.user),
+                    format!("Logged in as: {}", user.user),
                     TextStyle {
+                        font: asset_server.load(FONT),
                         font_size: 40.0,
+                        color: OLIVE_GREEN,
                         ..default()
                     },
                 ),
@@ -495,9 +520,11 @@ fn spawn_user_text(commands: &mut Commands, login_data: &ResMut<User>) {
             });
             builder.spawn(TextBundle {
                 text: Text::from_section(
-                    format!("{}", login_data.score),
+                    format!("Personal Best: {}", user.score),
                     TextStyle {
-                        font_size: 40.0,
+                        font: asset_server.load(FONT),
+                        font_size: 30.0,
+                        color: OLIVE_GREEN,
                         ..default()
                     },
                 ),
@@ -519,16 +546,16 @@ fn update_button_look(
 ) {
     for (mut button_background, button_interaction) in button_query.iter_mut() {
         match *button_interaction {
-            Interaction::Pressed => button_background.0 = Color::SILVER,
-            Interaction::Hovered => button_background.0 = Color::GRAY,
-            Interaction::None => button_background.0 = Color::DARK_GRAY,
+            Interaction::Pressed => button_background.0 = BASIL_GREEN,
+            Interaction::Hovered => button_background.0 = Color::SALMON,
+            Interaction::None => button_background.0 = OLIVE_GREEN,
         }
     }
     for (mut button_background, button_interaction) in submit_button_query.iter_mut() {
         match *button_interaction {
-            Interaction::Pressed => button_background.0 = Color::LIME_GREEN,
-            Interaction::Hovered => button_background.0 = Color::GREEN,
-            Interaction::None => button_background.0 = Color::DARK_GREEN,
+            Interaction::Pressed => button_background.0 = OLIVE_GREEN,
+            Interaction::Hovered => button_background.0 = Color::SALMON,
+            Interaction::None => button_background.0 = BASIL_GREEN,
         }
     }
 }
@@ -631,20 +658,20 @@ pub fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
     });
     // Spawn Title Text
     let title = format!("Leaderboard");
-    let font = asset_server.load("fonts/Leila-Regular.ttf");
+
     commands.spawn({
         TextBundle {
             text: Text::from_section(
                 title,
                 TextStyle {
-                    font,
+                    font: asset_server.load(FONT),
                     font_size: 64.0,
                     color: OLIVE_GREEN,
                 },
             )
             .with_alignment(TextAlignment::Center),
             style: Style {
-                top: Val::Vh(-30.0),
+                top: Val::Vh(-40.0),
                 justify_self: JustifySelf::Center,
                 align_self: AlignSelf::Center,
                 ..default()

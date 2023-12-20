@@ -4,7 +4,7 @@ use bevy::{
 };
 
 use crate::{
-    main_menu::{SoundEffect, OLIVE_GREEN},
+    main_menu::{SoundEffect, FONT, OLIVE_GREEN},
     AppState,
 };
 
@@ -25,13 +25,13 @@ pub fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
     });
     // Spawn Title Text
     let title = format!("How To Play");
-    let font = asset_server.load("fonts/Leila-Regular.ttf");
+
     commands.spawn({
         TextBundle {
             text: Text::from_section(
                 title,
                 TextStyle {
-                    font,
+                    font: asset_server.load(FONT),
                     font_size: 64.0,
                     color: OLIVE_GREEN,
                 },
@@ -58,7 +58,7 @@ pub fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
     .:. If you guess incorrectly, the game is over and you go back to the main menu .:.
     .:. Depending on your performance, you can unlock more characters for your village .:."
     );
-    let font = asset_server.load("fonts/Leila-Regular.ttf");
+
     commands
         .spawn(NodeBundle {
             style: Style {
@@ -79,7 +79,7 @@ pub fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
                         text: Text::from_section(
                             subtitle,
                             TextStyle {
-                                font: font.clone(),
+                                font: asset_server.load(FONT),
                                 font_size: 32.0,
                                 color: Color::SALMON,
                             },
@@ -100,7 +100,7 @@ pub fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
                     text: Text::from_section(
                         text,
                         TextStyle {
-                            font: font.clone(),
+                            font: asset_server.load(FONT),
                             font_size: 27.0,
                             color: OLIVE_GREEN,
                         },

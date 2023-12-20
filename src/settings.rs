@@ -11,7 +11,7 @@ use bevy_tweening::{
 
 use crate::{
     game_mod::{FruitType, GridIdentifier},
-    main_menu::{SoundEffect, BASIL_GREEN, OLIVE_GREEN, SKY_BLUE},
+    main_menu::{SoundEffect, BASIL_GREEN, FONT, OLIVE_GREEN, SKY_BLUE},
     AppState,
 };
 
@@ -129,14 +129,14 @@ pub fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
         ..default()
     });
     // Spawn Title Text
-    let title = format!("Settings");
-    let font = asset_server.load("fonts/Leila-Regular.ttf");
+    let title = format!("Village");
+
     commands.spawn({
         TextBundle {
             text: Text::from_section(
                 title,
                 TextStyle {
-                    font,
+                    font: asset_server.load(FONT),
                     font_size: 64.0,
                     color: OLIVE_GREEN,
                 },
@@ -156,13 +156,13 @@ pub fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
         "Select the type of fruit you see in game.
 Light green is Fruit A, light blue is Fruit B."
     );
-    let font = asset_server.load("fonts/Leila-Regular.ttf");
+
     commands.spawn({
         TextBundle {
             text: Text::from_section(
                 title,
                 TextStyle {
-                    font,
+                    font: asset_server.load(FONT),
                     font_size: 32.0,
                     color: OLIVE_GREEN,
                 },
@@ -388,7 +388,7 @@ pub fn spawn_chibi(
 
     // Spawn Villager Title
     let title = format!("Villagers Unlocked");
-    let font = asset_server.load("fonts/Leila-Regular.ttf");
+
     commands
         .spawn(NodeBundle {
             style: Style {
@@ -407,7 +407,7 @@ pub fn spawn_chibi(
                     text: Text::from_section(
                         title,
                         TextStyle {
-                            font,
+                            font: asset_server.load(FONT),
                             font_size: 32.0,
                             color: OLIVE_GREEN,
                         },

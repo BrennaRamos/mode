@@ -1,4 +1,4 @@
-use bevy::{asset::AssetMetaCheck, prelude::*};
+use bevy::{asset::AssetMetaCheck, log::LogPlugin, prelude::*};
 mod game_mod;
 mod how_to_play;
 mod leaderboard;
@@ -21,13 +21,17 @@ fn main() {
     App::new()
         .insert_resource(AssetMetaCheck::Never)
         .add_plugins((
-            DefaultPlugins.set(ImagePlugin::default_nearest()),
+            DefaultPlugins
+                .set(ImagePlugin::default_nearest())
+                .set(LogPlugin {
+                    filter: "bevy_ecs=error,wgpu=error,naga=warn".into(),
+                    ..default()
+                }),
             TweeningPlugin,
             LeaderboardPlugin,
         ))
         .init_resource::<GameData>()
         .init_resource::<GameSettings>()
-        .init_resource::<PlayerData>()
         .init_resource::<Handles>()
         .init_resource::<Villagers>()
         .add_state::<AppState>()
@@ -43,7 +47,7 @@ fn main() {
         )
         .add_systems(
             OnEnter(AppState::GameOver),
-            (game_mod::game_over, game_mod::upload_score),
+            (game_mod::upload_score, game_mod::game_over).chain(),
         )
         .add_systems(OnEnter(AppState::QuitGame), main_menu::quit_game)
         .add_systems(
